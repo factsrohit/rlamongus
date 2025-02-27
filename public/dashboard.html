@@ -11,10 +11,11 @@
     <h1>Welcome to the GPS Tracker</h1>
     <button onclick="getLocation()">Start Tracking</button>
     <p id="location">Your location will appear here...</p>
+    <p id="loclastupdate">Your Loc hasn't been Updated in DB</p>
     <a href="/logout"><button>Logout</button></a>
 
-    <script src="./mainmenu.js">
-       /* function getLocation() {
+    <script src="mainmenu.js">
+        /*function getLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(showPosition, showError, {
                     enableHighAccuracy: true,
@@ -26,7 +27,7 @@
             }
         }
 
-        function showPosition(position) {
+       s function showPosition(position) {
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
             document.getElementById("location").textContent = `Lat: ${lat}, Lon: ${lon}`;
