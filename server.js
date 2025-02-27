@@ -91,6 +91,7 @@ app.get('/logout', (req, res) => {
 app.get('/dashboard', isAuthenticated, (req, res) => {
     res.sendFile(__dirname + '/public/dashboard.html');
 });
+/*
 app.post('/update-location', (req, res) => {
     const { latitude, longitude } = req.body;
     const username = req.session.username;
@@ -115,8 +116,8 @@ app.post('/update-location', (req, res) => {
             res.send("Location updated");
         }
     );
-});
-/*
+});*/
+
 app.post('/update-location', (req, res) => {
     const { latitude, longitude } = req.body;
     const username = req.session.username;
@@ -136,7 +137,7 @@ app.post('/update-location', (req, res) => {
         }
     );
 });
-*/
+
 app.get('/get-location', (req, res) => {
     const username = req.session.username;
 

@@ -17,14 +17,14 @@ function showPosition(position) {
     console.log(`Latitude: ${lat}, Longitude: ${lon}`);
 
     // Display location on the webpage
-    document.getElementById("location").textContent = `Lat: ${lat}, Lon: ${lon}`;
+    document.getElementById("location").textContent = `Current Player Loc Lat: ${lat}, Lon: ${lon}`;
 
     // Fetch last known location from server
     fetch('/get-location')
         .then(response => response.json())
         .then(data => {
             if (data.latitude && data.longitude) {
-                document.getElementById("loclastupdate").textContent = `Last Location: Lat ${data.latitude}, Lon ${data.longitude}`;
+                document.getElementById("loclastupdate").textContent = `Last Saved Location: \nLat ${data.latitude}, Lon ${data.longitude}`;
             } else {
                 document.getElementById("loclastupdate").textContent = "No previous location found.";
             }
