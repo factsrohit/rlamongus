@@ -25,6 +25,15 @@ db.run(`CREATE TABLE IF NOT EXISTS locations (
     latitude REAL,
     longitude REAL
 )`);
+function clearLocationData() {
+    db.run("DELETE FROM locations", (err) => {
+        if (err) {
+            console.error("❌ Error clearing location data:", err.message);
+        } else {
+            console.log("✅ Cleared all previous location data.");
+        }
+    });
+}
 // Middleware
 app.use(express.json()); 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -161,6 +170,44 @@ app.get('/get-location', (req, res) => {
     })*/
 });
 
+app.get('/nearby-players', (req, res) => {
+    const username = req.session.username;
+    if (!username) return res.status(401).send("Not logged in");
+
+    db.get(`SELECT latitude, longitude FROM locations WHERE username = ?`, [username], (err, player) => {
+        if (err || !player) {
+            console.error("Error fetching player location:", err);
+            return res.json({ count: 0, players: [] });
+        }
+
+        const { latitude, longitude } = player;
+
+        db.all(`
+            SELECT username, distance FROM (
+                SELECT username, latitude, longitude,
+                (6371 * acos(
+                    cos(radians(?)) * cos(radians(latitude)) * 
+                    cos(radians(longitude) - radians(?)) + 
+                    sin(radians(?)) * sin(radians(latitude))
+                )) AS distance
+                FROM locations
+                WHERE username != ?
+            ) WHERE distance <= 0.010
+        `, [latitude, longitude, latitude, username], (err, rows) => {
+            if (err) {
+                console.error("Error fetching nearby players:", err.message);
+                return res.json({ count: 0, players: [] });
+            }
+
+            //console.log("Nearby Players Found:", rows);
+            res.json({
+                count: rows.length,
+                players: rows.map(player => player.username)
+            });
+        });
+    });
+});
+
 
 
 
@@ -173,14 +220,14 @@ async function startServer() {
     try {
         await kill(port); // Kill the port if it's occupied
         console.log(`Port ${port} is now free.`);
-        
+        clearLocationData();
         // Start the server after killing the port
         app.listen(port, () => {
             console.log(`Server running at http://localhost:${port}`);
         });
     } catch (err) {
         console.error('Error freeing port:', err);
-        
+        clearLocationData();
         // Start the server even if the port can't be freed (in case kill fails)
         app.listen(port, () => {
             console.log(`Server running at http://localhost:${port}`);

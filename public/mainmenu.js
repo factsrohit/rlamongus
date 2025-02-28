@@ -31,15 +31,21 @@ function showPosition(position) {
         })
         .catch(error => console.error("Error fetching last location:", error));
 
-    // Send current location to server
-    fetch('/update-location', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ latitude: lat, longitude: lon })
-    })
-    .then(response => response.text())
-    .then(data => console.log(data))
-    .catch(error => console.error("Error updating location:", error));
+    // **Check if the location has changed before updating**
+    if (localStorage.getItem("lastLat") !== lat.toString() || localStorage.getItem("lastLon") !== lon.toString()) {
+        localStorage.setItem("lastLat", lat);
+        localStorage.setItem("lastLon", lon);
+
+        // Send updated location to the server
+        fetch('/update-location', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ latitude: lat, longitude: lon })
+        })
+        .then(response => response.text())
+        .then(data => console.log(data))
+        .catch(error => console.error("Error updating location:", error));
+    }
 }
 
 function showError(error) {
@@ -59,5 +65,21 @@ function showError(error) {
     }
 }
 
+// Update nearby players every 5 seconds
+function updateNearbyPlayers() {
+    fetch('/nearby-players')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("nearbyPlayers").textContent = `Players Nearby(${data.count}): ${data.players.join(", ")}`;
+        })
+        .catch(error => console.error("Error fetching nearby players:", error));
+}
+
+//setInterval(updateNearbyPlayers, 5000);
+
 // Get location on page load
-window.onload = getLocation;
+window.onload = () => {
+    setInterval(updateNearbyPlayers, 5000);
+    localStorage.clear();  // Clear stored location data on refresh
+    getLocation();         // Start fetching location
+};

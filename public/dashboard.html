@@ -9,9 +9,12 @@
 </head>
 <body>
     <h1>Welcome to the GPS Tracker</h1>
-    <button onclick="getLocation()">Start Tracking</button>
+    <TEXT>Location Should Auto Update, If It Doesn't, Try:</TEXT>
+    <br></br>
+    <button onclick="getLocation()">Refresh Current Location</button>
     <p id="location">Your location will appear here...</p>
     <p id="loclastupdate">Your Loc hasn't been Updated in DB</p>
+    <p id="nearbyPlayers">NO Players Currently within your range</p>
     <a href="/logout"><button>Logout</button></a>
 
     <script src="mainmenu.js">
