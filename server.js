@@ -127,6 +127,31 @@ app.post('/update-location', (req, res) => {
     );
 });*/
 
+
+app.post('/clear-users', (req, res) => {
+    const username = req.session.username;
+    
+    if (!username || username !== 'admin') {
+        return res.status(403).send("Access Denied");
+    }
+
+    db.run(`DELETE FROM users WHERE username != 'admin'`, (err) => {
+        if (err) {
+            console.error("Error clearing users:", err);
+            return res.status(500).send("Error clearing users");
+        }
+        
+    });
+    db.run(`DELETE FROM LOCATIONS WHERE username != 'admin'`, (err) => {
+        if (err) {
+            console.error("Error clearing users:", err);
+            return res.status(500).send("Error clearing users");
+        }
+        res.send("All users (except admin) have been deleted");
+    });
+});
+
+
 app.post('/update-location', (req, res) => {
     const { latitude, longitude } = req.body;
     const username = req.session.username;

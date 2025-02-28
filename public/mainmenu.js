@@ -75,6 +75,14 @@ function updateNearbyPlayers() {
         .catch(error => console.error("Error fetching nearby players:", error));
 }
 
+function clearUsers() {
+    if (confirm("Are you sure you want to delete all users except the admin?")) {
+        fetch('/clear-users', { method: 'POST' })
+            .then(response => response.text())
+            .then(data => alert(data))
+            .catch(error => console.error("Error clearing users:", error));
+    }
+}
 //setInterval(updateNearbyPlayers, 5000);
 
 // Get location on page load
