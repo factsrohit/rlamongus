@@ -84,10 +84,58 @@ function clearUsers() {
     }
 }
 //setInterval(updateNearbyPlayers, 5000);
+function checkRole() {
+    fetch('/dashboard')
+    .then(res => res.json())
+    .then(data => {
+        if (data.imposters > 0) {
+            document.getElementById("killBtn").style.display = "block";
+        }
+    });
+}
+
+function kill() {
+    fetch('/kill', { method: "POST" })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        startCooldown();
+    })
+    .catch(err => console.error(err));
+}
+
+function startCooldown() {
+    let timeLeft = 30;
+    const cooldown = document.getElementById("cooldown");
+    const btn = document.getElementById("killBtn");
+
+    btn.disabled = true;
+    const interval = setInterval(() => {
+        cooldown.textContent = `Kill available in: ${timeLeft}s`;
+        timeLeft--;
+        if (timeLeft < 0) {
+            clearInterval(interval);
+            cooldown.textContent = "";
+            btn.disabled = false;
+        }
+    }, 1000);
+}
+function updateGameStatus() {
+    fetch('/game-status')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("gameStatus").textContent = 
+                `Crewmates Left: ${data.crewmates} | Imposters: ${data.imposters}`;
+        })
+        .catch(error => console.error("Error fetching game status:", error));
+}
+
 
 // Get location on page load
 window.onload = () => {
+    setInterval(updateGameStatus, 5000);
     setInterval(updateNearbyPlayers, 5000);
     localStorage.clear();  // Clear stored location data on refresh
     getLocation();         // Start fetching location
+    checkRole();
 };

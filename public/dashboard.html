@@ -15,6 +15,12 @@
     <p id="location">Your location will appear here...</p>
     <p id="loclastupdate">Your Loc hasn't been Updated in DB</p>
     <p id="nearbyPlayers">NO Players Currently within your range</p>
+    <br>
+    <p id="gameStatus">Loading game status...</p>
+    <br>
+    <button id="killBtn" style="display: none;" onclick="kill()">Kill</button>
+    <p id="cooldown"></p>
+    <br><br><br>
     <a href="/logout"><button>Logout</button></a>
 
     <script src="mainmenu.js">
@@ -54,7 +60,7 @@
         }*/
     </script>
 
-    
+    <br><br><br><br><br>
     <button onclick="clearUsers()">Clear All Users (Except Admin)</button>
 
     
