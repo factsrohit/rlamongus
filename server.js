@@ -58,18 +58,27 @@ function isAuthenticated(req, res, next) {
 
 // Routes
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
-
 app.post('/register', (req, res) => {
     const { username, password } = req.body;
+
     bcrypt.hash(password, 10, (err, hash) => {
-        if (err) return res.send("Error hashing password.");
-        db.run("INSERT INTO users (username, password) VALUES (?, ?)", [username, hash], (err) => {
-            if (err) return res.send("User already exists.");
+        if (err) {
+            console.error("Error hashing password:", err);
+            return res.send("Error hashing password.");
+        }
+
+        db.run("INSERT INTO users (username, password, role) VALUES (?, ?, 'CREWMATE')", [username, hash], (err) => {
+            if (err) {
+                console.error("Error registering user:", err);
+                return res.send("User already exists.");
+            }
+
             req.session.username = username;
             res.redirect('/dashboard');
         });
     });
 });
+
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
 
@@ -81,12 +90,16 @@ app.post('/login', (req, res) => {
         
         if (!user) return res.send("User not found.");
 
-        // Correct bcrypt comparison
+        //console.log(`Stored hash for ${username}:`, user.password);
+        //console.log(`Entered password:`, password);
+
         bcrypt.compare(password, user.password, (err, result) => {
             if (err) {
                 console.error("Bcrypt error:", err);
                 return res.send("Error checking password.");
             }
+
+            //console.log("Password match result:", result);
 
             if (result) {
                 req.session.username = username;
@@ -98,6 +111,7 @@ app.post('/login', (req, res) => {
     });
 });
 
+
 app.get('/logout', (req, res) => {
     req.session.destroy(() => res.redirect('/'));
 });
@@ -106,56 +120,18 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
     res.sendFile(__dirname + '/public/dashboard.html');
 });
 
-/*
-app.post('/update-location', (req, res) => {
-    const { latitude, longitude } = req.body;
-    const username = req.session.username;
-
-    console.log("📌 Incoming Data:", { username, latitude, longitude });
-
-    if (!username) {
-        console.error("❌ Not logged in - session username missing");
-        return res.status(401).send("Not logged in");
-    }
-
-    db.run(
-        `INSERT INTO locations (username, latitude, longitude) VALUES (?, ?, ?)
-         ON CONFLICT(username) DO UPDATE SET latitude = excluded.latitude, longitude = excluded.longitude`,
-        [username, latitude, longitude],
-        (err) => {
-            if (err) {
-                console.error("❌ Database error:", err.message);
-                return res.status(500).send("Error updating location");
-            }
-            console.log("✅ Location updated successfully!");
-            res.send("Location updated");
-        }
-    );
-});*/
-
-
 app.post('/clear-users', (req, res) => {
-    const username = req.session.username;
-    
-    if (!username || username !== 'admin') {
-        return res.status(403).send("Access Denied");
-    }
+    if (req.session.username !== 'admin') return res.status(403).send("Access Denied");
 
-    db.run(`DELETE FROM users WHERE username != 'admin'`, (err) => {
-        if (err) {
-            console.error("Error clearing users:", err);
-            return res.status(500).send("Error clearing users");
-        }
-        
-    });
-    db.run(`DELETE FROM LOCATIONS WHERE username != 'admin'`, (err) => {
-        if (err) {
-            console.error("Error clearing users:", err);
-            return res.status(500).send("Error clearing users");
-        }
-        res.send("All users (except admin) have been deleted");
+    db.serialize(() => {
+        db.run(`DELETE FROM users WHERE username != 'admin'`);
+        db.run(`DELETE FROM locations WHERE username != 'admin'`, (err) => {
+            if (err) return res.status(500).send("Error clearing users");
+            res.send("All users (except admin) have been deleted");
+        });
     });
 });
+
 
 
 app.post('/update-location', (req, res) => {
@@ -200,46 +176,7 @@ app.get('/get-location', (req, res) => {
         console.log(row)
     })*/
 });
-/*
-app.get('/nearby-players', (req, res) => {
-    const username = req.session.username;
-    if (!username) return res.status(401).send("Not logged in");
 
-    db.get(`SELECT latitude, longitude FROM locations WHERE username = ?`, [username], (err, player) => {
-        if (err || !player) {
-            console.error("Error fetching player location:", err);
-            return res.json({ count: 0, players: [] });
-        }
-
-        const { latitude, longitude } = player;
-        const range = 0.0001 * 7; // Rough bounding box for 7 meters
-
-        db.all(`
-            SELECT username, latitude, longitude
-            FROM locations
-            WHERE username != ?
-            AND latitude BETWEEN ? AND ?
-            AND longitude BETWEEN ? AND ?
-        `, [username, latitude - range, latitude + range, longitude - range, longitude + range], (err, rows) => {
-            if (err) {
-                console.error("Error fetching nearby players:", err);
-                return res.json({ count: 0, players: [] });
-            }
-            console.log("Players found in bounding box:", rows);
-
-
-            // Final filtering in JavaScript using Haversine formula
-            const nearbyPlayers = rows.filter(other => {
-                return getDistance(latitude, longitude, other.latitude, other.longitude) <= 7; // 7 meters
-            });
-            console.log("Final nearby players:", nearbyPlayers);
-            res.json({ 
-                count: nearbyPlayers.length, 
-                players: nearbyPlayers.map(player => player.username) 
-            });
-        });
-    });
-});*/
 app.get('/nearby-players', (req, res) => {
     const username = req.session.username;
     if (!username) return res.status(401).send("Not logged in");
@@ -291,37 +228,76 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 // Kill Route
+
 app.post('/kill', isAuthenticated, (req, res) => {
     const username = req.session.username;
     const now = Math.floor(Date.now() / 1000);
 
     db.get(`SELECT role, last_kill_time FROM users WHERE username = ?`, [username], (err, user) => {
-        if (err || !user) return res.status(500).send("Error fetching user");
-        if (user.role !== "TERIMPOS") return res.status(403).send("Only imposters can kill");
-        if (now - user.last_kill_time < COOLDOWN_TIME) return res.status(403).send("Kill on cooldown");
+        if (err || !user) {
+            console.error("Error fetching user:", err);
+            return res.status(500).json({ success: false, message: "Error fetching user" });
+        }
 
+        if (user.role !== 'IMPOSTER') {
+            return res.status(403).json({ success: false, message: "Only imposters can kill" });
+        }
+
+        if (user.last_kill_time && now - user.last_kill_time < COOLDOWN_TIME) {
+            return res.status(403).json({ success: false, message: "Kill on cooldown" });
+        }
+
+        // Get the imposter's location
         db.get(`SELECT latitude, longitude FROM locations WHERE username = ?`, [username], (err, imposter) => {
-            if (err || !imposter) return res.status(500).send("Error fetching location");
+            if (err || !imposter) {
+                console.error("Error fetching imposter location:", err);
+                return res.status(500).json({ success: false, message: "Error fetching location" });
+            }
 
+            // Find the nearest crewmate within range (fixed WHERE condition)
             db.get(`
-                SELECT username, 
-                (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * 
-                cos(radians(longitude) - radians(?)) + 
-                sin(radians(?)) * sin(radians(latitude)))) AS distance
+                SELECT users.username, latitude, longitude,
+                (6371 * acos(
+                    cos(radians(?)) * cos(radians(latitude)) *
+                    cos(radians(longitude) - radians(?)) +
+                    sin(radians(?)) * sin(radians(latitude))
+                )) AS distance
                 FROM locations 
                 JOIN users ON locations.username = users.username
                 WHERE users.role = "CREWMATE"
+                AND (6371 * acos(
+                    cos(radians(?)) * cos(radians(latitude)) *
+                    cos(radians(longitude) - radians(?)) +
+                    sin(radians(?)) * sin(radians(latitude))
+                )) <= ?
                 ORDER BY distance ASC LIMIT 1
-            `, [imposter.latitude, imposter.longitude, imposter.latitude], (err, victim) => {
-                if (err || !victim || victim.distance > KILL_RANGE) {
-                    return res.status(404).send("No crewmate in range");
+            `, [imposter.latitude, imposter.longitude, imposter.latitude, 
+                imposter.latitude, imposter.longitude, imposter.latitude, KILL_RANGE], 
+            (err, victim) => {
+                if (err) {
+                    console.error("Error finding closest crewmate:", err);
+                    return res.status(500).json({ success: false, message: "Error finding victim" });
                 }
 
-                db.run(`UPDATE users SET role = "IMPOSTER" WHERE username = ?`, [victim.username], (err) => {
-                    if (err) return res.status(500).send("Error updating victim");
-                    
+                if (!victim) {
+                    return res.status(404).json({ success: false, message: "No crewmates in range" });
+                }
+
+                // Convert the crewmate into an imposter
+                db.run(`UPDATE users SET role = 'IMPOSTER' WHERE username = ?`, [victim.username], (err) => {
+                    if (err) {
+                        console.error("Error updating victim role:", err);
+                        return res.status(500).json({ success: false, message: "Error updating victim" });
+                    }
+
+                    // Update the killer's cooldown time
                     db.run(`UPDATE users SET last_kill_time = ? WHERE username = ?`, [now, username], (err) => {
-                        if (err) return res.status(500).send("Error updating cooldown");
+                        if (err) {
+                            console.error("Error updating cooldown:", err);
+                            return res.status(500).json({ success: false, message: "Error updating cooldown" });
+                        }
+
+                        console.log(`${username} killed ${victim.username}.`);
                         res.json({ success: true, message: `${victim.username} is now an imposter!` });
                     });
                 });
@@ -330,26 +306,51 @@ app.post('/kill', isAuthenticated, (req, res) => {
     });
 });
 
+
+
 // Get Dashboard Stats
 app.get('/statboard', isAuthenticated, (req, res) => {
-    db.all(`SELECT role, COUNT(*) AS count FROM users GROUP BY role`, (err, rows) => {
-        if (err) return res.status(500).send("Error fetching data");
+    db.all(`SELECT role, COUNT(*) AS count FROM users GROUP BY role`, [], (err, rows) => {
+        if (err) {
+            console.error("Error fetching statboard:", err);
+            return res.status(500).json({ error: "Error fetching data" });
+        }
 
         let total = 0, imposters = 0;
-        rows.forEach(row => {
-            total += row.count;
-            if (row.role === "IMPOSTER") imposters = row.count;
-        });
 
-        res.json({ totalPlayers: total, imposters });
+        if (Array.isArray(rows)) {
+            rows.forEach(row => {
+                total += row.count;
+                if (row.role === 'IMPOSTER') imposters = row.count;
+            });
+        } else {
+            console.error("Unexpected data format for rows:", rows);
+            return res.status(500).json({ error: "Invalid data format" });
+        }
+
+        // Fetch the current user's role
+        db.get(`SELECT role FROM users WHERE username = ?`, [req.session.username], (err, user) => {
+            if (err) {
+                console.error("Error fetching user role:", err);
+                return res.status(500).json({ error: "Error fetching user role" });
+            }
+
+            res.json({
+                totalPlayers: total,
+                imposters,
+                currentUserRole: user ? user.role : "UNKNOWN"
+            });
+        });
     });
 });
+
+
 
 app.get('/game-status', async (req, res) => {
     try {
         
-        const crewmates = await db.get(`SELECT COUNT(*) as count FROM users WHERE role = "CREWMATE"`);
-        const imposters = await db.get(`SELECT COUNT(*) as count FROM users WHERE role = "IMPOSTER"`);
+        const crewmates = await db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`);
+        const imposters = await db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'IMPOSTER'`);
 
         res.json({ 
             crewmates: crewmates?.count || 0, 
@@ -362,6 +363,46 @@ app.get('/game-status', async (req, res) => {
 });
 
 
+
+app.get('/check-admin', (req, res) => {
+    if (req.session.username === 'admin') {
+        res.json({ isAdmin: true });
+    } else {
+        res.json({ isAdmin: false });
+    }
+});
+app.post('/start-game', async (req, res) => {
+    try {
+        console.log("Using database file:", db.filename);
+
+        console.log("Before resetting roles:");
+        const allPlayers = await db.all(`SELECT * FROM users`);
+        console.table(allPlayers);
+
+        // Reset roles to "CREWMATE"
+        await db.run(`UPDATE users SET role = 'CREWMATE'`);
+
+        console.log("After resetting roles:");
+        const updatedPlayers = await db.all(`SELECT * FROM users`);
+        console.table(updatedPlayers);
+
+        // Select a random crewmate
+        const crewmate = await db.get(`SELECT username FROM users WHERE role = 'CREWMATE' ORDER BY RANDOM() LIMIT 1`);
+        console.log("Selected Crewmate:", crewmate);
+
+        if (!crewmate || !crewmate.username) {
+            return res.status(400).send("No crewmates available to turn into an imposter.");
+        }
+
+        // Update role to IMPOSTER
+        await db.run(`UPDATE users SET role = 'IMPOSTER' WHERE username = ?`, [crewmate.username]);
+
+        res.send(`Game started! ${crewmate.username} is now the first Imposter.`);
+    } catch (error) {
+        console.error("Error starting game:", error);
+        res.status(500).send("Failed to start game.");
+    }
+});
 
 
 

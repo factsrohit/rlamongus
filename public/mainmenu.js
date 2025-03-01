@@ -85,12 +85,18 @@ function clearUsers() {
 }
 //setInterval(updateNearbyPlayers, 5000);
 function checkRole() {
-    fetch('/dashboard')
+    fetch('/statboard')
     .then(res => res.json())
     .then(data => {
-        if (data.imposters > 0) {
+        console.log("Game Status:", data); // Debugging log
+
+        // Ensure the user is an imposter before showing the Kill button
+        if (data.currentUserRole === "IMPOSTER") {
             document.getElementById("killBtn").style.display = "block";
+        } else {
+            document.getElementById("killBtn").style.display = "none";
         }
+        
     });
 }
 
@@ -120,19 +126,44 @@ function startCooldown() {
         }
     }, 1000);
 }
+
+
+// Fetch game status and show "Start Game" button for admin
 function updateGameStatus() {
     fetch('/game-status')
         .then(response => response.json())
         .then(data => {
             document.getElementById("gameStatus").textContent = 
-                `Crewmates Left: ${data.crewmates} | Imposters: ${data.imposters}`;
+                `Crewmates Left: ${data.crewmates ?? 0} | Imposters: ${data.imposters ?? 0}`;
         })
         .catch(error => console.error("Error fetching game status:", error));
 }
 
+// Check if user is admin and show the Start Game button
+function checkAdmin() {
+    fetch('/check-admin')
+        .then(response => response.json())
+        .then(data => {
+            if (data.isAdmin) {
+                document.getElementById("startGameBtn").style.display = "block";
+            }
+        })
+        .catch(error => console.error("Error checking admin status:", error));
+}
+
+// Start the game (set a random crewmate as an imposter)
+function startGame() {
+    fetch('/start-game', { method: 'POST' })
+        .then(response => response.text())
+        .then(data => alert(data))
+        .catch(error => console.error("Error starting game:", error));
+}
+
+
 
 // Get location on page load
 window.onload = () => {
+    checkAdmin();
     setInterval(updateGameStatus, 5000);
     setInterval(updateNearbyPlayers, 5000);
     localStorage.clear();  // Clear stored location data on refresh
