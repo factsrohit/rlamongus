@@ -373,15 +373,16 @@ app.get('/check-admin', (req, res) => {
 });
 app.post('/start-game', async (req, res) => {
     try {
-        console.log("Using database file:", db.filename);
+       /* console.log("Using database file:", db.filename);
 
         console.log("Before resetting roles:");
         const allPlayers = await db.all(`SELECT * FROM users`);
         console.table(allPlayers);
-
+        */
         // Reset roles to "CREWMATE"
-        await db.run(`UPDATE users SET role = 'CREWMATE'`);
-
+        await db.run(`UPDATE users SET role = 'CREWMATE' where username!= 'admin' `);
+        res.status(400).send("Everyone Reset to Crewmates");
+        /*
         console.log("After resetting roles:");
         const updatedPlayers = await db.all(`SELECT * FROM users`);
         console.table(updatedPlayers);
@@ -398,6 +399,7 @@ app.post('/start-game', async (req, res) => {
         await db.run(`UPDATE users SET role = 'IMPOSTER' WHERE username = ?`, [crewmate.username]);
 
         res.send(`Game started! ${crewmate.username} is now the first Imposter.`);
+        */
     } catch (error) {
         console.error("Error starting game:", error);
         res.status(500).send("Failed to start game.");
