@@ -1,14 +1,14 @@
 /* Global styles */
-body {
+/*body {
     font-family: Arial, sans-serif;
     background-color: #1e1e2f;
     color: #fff;
     text-align: center;
     padding: 20px;
-}
+}*/
 
 /* Container */
-.container {
+/*.container {
     max-width: 400px;
     margin: auto;
     background: #2a2a3b;
@@ -16,14 +16,14 @@ body {
     border-radius: 10px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
 }
-
+*/
 /* Headings */
-h1 {
+/*h1 {
     font-size: 24px;
 }
-
+*/
 /* Forms */
-form {
+/*form {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -36,9 +36,9 @@ input {
     border-radius: 5px;
     font-size: 16px;
 }
-
+*/
 /* Buttons */
-button {
+/*button {
     padding: 10px;
     background-color: #ff4757;
     color: white;
@@ -51,10 +51,129 @@ button {
 button:hover {
     background-color: #e8415a;
 }
-
+*/
 /* GPS Info */
-#location {
+/*#location {
     font-size: 18px;
     font-weight: bold;
     margin-top: 20px;
+}
+*/
+
+/* Global styles */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #1e1e2f;
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Prevent horizontal scrolling */
+html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Main wrapper to center everything */
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px; /* Space between login and register forms */
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Container for form sections */
+.container {
+    width: 100%;
+    background: #2a2a3b;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0px 5px 12px rgba(0, 0, 0, 0.25);
+    box-sizing: border-box;
+}
+
+/* Headings */
+h1 {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #ff4757;
+}
+
+/* Forms */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* Input Fields */
+input {
+    padding: 12px;
+    border: 1px solid #444;
+    border-radius: 6px;
+    font-size: 16px;
+    background: #1e1e2f;
+    color: white;
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+input:focus {
+    outline: none;
+    border-color: #ff4757;
+    box-shadow: 0px 0px 5px rgba(255, 71, 87, 0.6);
+}
+
+/* Buttons */
+button {
+    padding: 12px;
+    background: linear-gradient(135deg, #ff4757, #e8415a);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+button:hover {
+    background: linear-gradient(135deg, #e8415a, #ff4757);
+    box-shadow: 0px 4px 10px rgba(255, 71, 87, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+    .wrapper {
+        width: 95%;
+    }
+
+    .container {
+        width: 100%;
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 22px;
+    }
+
+    input, button {
+        font-size: 14px;
+        padding: 10px;
+    }
 }

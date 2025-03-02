@@ -5,66 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="manifest.json">
     <title>Dashboard - GPS Tracker</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
-    <h1>Welcome to RealLife Color Splash</h1>
-    <TEXT>Location Should Auto Update, If It Doesn't, Try:</TEXT>
-    <br></br>
-    <button onclick="getLocation()">Refresh Current Location</button>
-    <p id="location">Your location will appear here...</p>
-    <p id="loclastupdate">Your Loc hasn't been Updated in DB</p>
-    <p id="nearbyPlayers">NO Players Currently within your range</p>
-    <br>
-    <button id="startGameBtn" style="display: none;" onclick="startGame()">Start Game</button>
-    <p id="gameStatus">Loading game status...</p>
-    <br>
-    <button id="killBtn" style="display: none;" onclick="kill()">Kill</button>
-    <p id="cooldown"></p>
-    <br><br><br>
-    <a href="/logout"><button>Logout</button></a>
 
-    <script src="mainmenu.js">
-        /*function getLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(showPosition, showError, {
-                    enableHighAccuracy: true,
-                    timeout: 5000,
-                    maximumAge: 0
-                });
-            } else {
-                alert("Geolocation is not supported by this browser.");
-            }
-        }
+    <div class="container">
+        <h1>Welcome to RealLife Color Splash</h1>
+        <p>Location Should Auto Update, If It Doesn't, Try:</p>
 
-       s function showPosition(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            document.getElementById("location").textContent = `Lat: ${lat}, Lon: ${lon}`;
-        }
+        <button onclick="getLocation()">Refresh Current Location</button>
+        
+        <div class="info-box">
+            <p id="location">📍 Your location will appear here...</p>
+            <p id="loclastupdate">⏳ Location hasn't been updated in DB.</p>
+            <p id="nearbyPlayers">🕵️‍♂️ NO players currently within your range.</p>
+        </div>
 
-        function showError(error) {
-            switch (error.code) {
-                case error.PERMISSION_DENIED:
-                    alert("User denied the request for Geolocation.");
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    alert("Location information is unavailable.");
-                    break;
-                case error.TIMEOUT:
-                    alert("The request to get user location timed out.");
-                    break;
-                case error.UNKNOWN_ERROR:
-                    alert("An unknown error occurred.");
-                    break;
-            }
-        }*/
-    </script>
+        <button id="startGameBtn" style="display: none;" onclick="startGame()">🎮 Start Game</button>
+        <p id="gameStatus">Loading game status...</p>
 
-    <br><br><br><br><br>
-    <button onclick="clearUsers()">Clear All Users (Except Admin)</button>
+        <button id="killBtn" style="display: none;" onclick="kill()">💀 Kill</button>
+        <p id="cooldown"></p>
 
-    
+        <a href="/logout"><button>🚪 Logout</button></a>
+
+        <br><br>
+        <button class="danger" onclick="clearUsers()">⚠️ Clear All Users (Except Admin)</button>
+    </div>
+
+    <script src="mainmenu.js"></script>
+
 </body>
-
 </html>

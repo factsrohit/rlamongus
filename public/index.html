@@ -7,18 +7,28 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Login</h1>
-    <form action="/login" method="POST">
-        <input type="text" name="username" placeholder="Username" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <button type="submit">Login</button>
-    </form>
 
-    <h1>Register</h1>
-    <form action="/register" method="POST">
-        <input type="text" name="username" placeholder="Username" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <button type="submit">Register</button>
-    </form>
+    <div class="wrapper">
+        <!-- Login Form -->
+        <div class="container">
+            <h1>Login</h1>
+            <form action="/login" method="POST">
+                <input type="text" name="username" placeholder="Username" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <!-- Register Form -->
+        <div class="container">
+            <h1>Register</h1>
+            <form action="/register" method="POST">
+                <input type="text" name="username" placeholder="Username" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit">Register</button>
+            </form>
+        </div>
+    </div>
+
 </body>
 </html>

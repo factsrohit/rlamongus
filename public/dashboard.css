@@ -1,0 +1,109 @@
+/* Cool Futuristic Theme */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #0f0f0f, #1a1a2e);
+    color: #ffffff;
+    text-align: center;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Glassmorphic Card */
+.container {
+    max-width: 420px;
+    padding: 30px;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    transition: transform 0.3s ease-in-out;
+}
+
+.container:hover {
+    transform: scale(1.03);
+}
+
+/* Headings */
+h1 {
+    font-size: 30px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #00c9ff, #ff5757);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Info Box */
+.info-box {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 12px;
+    border-radius: 10px;
+    margin: 15px 0;
+    font-size: 14px;
+    color: #fff;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Buttons */
+button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    margin-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Electric Blue Button */
+button {
+    background: linear-gradient(135deg, #007bff, #00c9ff);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 121, 255, 0.5);
+}
+
+button:hover {
+    background: linear-gradient(135deg, #00c9ff, #007bff);
+    box-shadow: 0 6px 16px rgba(0, 121, 255, 0.7);
+}
+
+/* Kill Button - Deep Red */
+button#killBtn {
+    background: linear-gradient(135deg, #ff3131, #ff5757);
+    box-shadow: 0 4px 12px rgba(255, 49, 49, 0.5);
+}
+
+button#killBtn:hover {
+    background: linear-gradient(135deg, #ff5757, #ff3131);
+    box-shadow: 0 6px 16px rgba(255, 49, 49, 0.7);
+}
+
+/* Soft Alert Button */
+button.danger {
+    background: linear-gradient(135deg, #ff7300, #ffaf00);
+    box-shadow: 0 4px 12px rgba(255, 115, 0, 0.5);
+}
+
+button.danger:hover {
+    background: linear-gradient(135deg, #ffaf00, #ff7300);
+    box-shadow: 0 6px 16px rgba(255, 115, 0, 0.7);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.container, button, .info-box {
+    animation: fadeIn 0.8s ease-in-out;
+}
