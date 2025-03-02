@@ -344,22 +344,28 @@ app.get('/statboard', isAuthenticated, (req, res) => {
     });
 });
 
+app.get('/game-status', (req, res) => {
+    db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`, (err, crewmatesRow) => {
+        if (err) {
+            console.error("Database Error (Crewmates):", err);
+            return res.status(500).json({ error: "Error retrieving game status" });
+        }
 
+        db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'IMPOSTER'`, (err, impostersRow) => {
+            if (err) {
+                console.error("Database Error (Imposters):", err);
+                return res.status(500).json({ error: "Error retrieving game status" });
+            }
 
-app.get('/game-status', async (req, res) => {
-    try {
-        
-        const crewmates = await db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`);
-        const imposters = await db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'IMPOSTER'`);
+            //console.log("Crewmates Count:", crewmatesRow ? crewmatesRow.count : "undefined");
+            //console.log("Imposters Count:", impostersRow ? impostersRow.count : "undefined");
 
-        res.json({ 
-            crewmates: crewmates?.count || 0, 
-            imposters: imposters?.count || 0 
+            res.json({ 
+                crewmates: crewmatesRow ? crewmatesRow.count : 0, 
+                imposters: impostersRow ? impostersRow.count : 0 
+            });
         });
-    } catch (error) {
-        console.error("Error fetching game status:", error);
-        res.status(500).json({ error: "Error retrieving game status" });
-    }
+    });
 });
 
 
@@ -371,36 +377,20 @@ app.get('/check-admin', (req, res) => {
         res.json({ isAdmin: false });
     }
 });
+
+
+
 app.post('/start-game', async (req, res) => {
     try {
-        console.log("Using database file:", db.filename);
+        // Reset all players to "CREWMATE" except the admin
+        await db.run(`UPDATE users SET role = 'CREWMATE' WHERE username != 'admin'`);
 
-        console.log("Before resetting roles:");
-        const allPlayers = await db.all(`SELECT * FROM users`);
-        console.table(allPlayers);
+        // Send confirmation response
+        res.send("All players have been reset to Crewmates (except admin).");
 
-        // Reset roles to "CREWMATE"
-        await db.run(`UPDATE users SET role = 'CREWMATE'`);
-
-        console.log("After resetting roles:");
-        const updatedPlayers = await db.all(`SELECT * FROM users`);
-        console.table(updatedPlayers);
-
-        // Select a random crewmate
-        const crewmate = await db.get(`SELECT username FROM users WHERE role = 'CREWMATE' ORDER BY RANDOM() LIMIT 1`);
-        console.log("Selected Crewmate:", crewmate);
-
-        if (!crewmate || !crewmate.username) {
-            return res.status(400).send("No crewmates available to turn into an imposter.");
-        }
-
-        // Update role to IMPOSTER
-        await db.run(`UPDATE users SET role = 'IMPOSTER' WHERE username = ?`, [crewmate.username]);
-
-        res.send(`Game started! ${crewmate.username} is now the first Imposter.`);
     } catch (error) {
-        console.error("Error starting game:", error);
-        res.status(500).send("Failed to start game.");
+        console.error("Error resetting game:", error);
+        res.status(500).send("Failed to reset game.");
     }
 });
 

@@ -134,7 +134,7 @@ function updateGameStatus() {
         .then(response => response.json())
         .then(data => {
             document.getElementById("gameStatus").textContent = 
-                `Crewmates Left: ${data.crewmates ?? 0} | Imposters: ${data.imposters ?? 0}`;
+                `Crewmates Left: ${data.crewmates} | Imposters: ${data.imposters}`;
         })
         .catch(error => console.error("Error fetching game status:", error));
 }
