@@ -146,6 +146,7 @@ function checkAdmin() {
         .then(data => {
             if (data.isAdmin) {
                 document.getElementById("startGameBtn").style.display = "block";
+                document.getElementById("clearusers").style.display = "block";
             }
         })
         .catch(error => console.error("Error checking admin status:", error));

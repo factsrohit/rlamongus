@@ -10,10 +10,10 @@
 <body>
 
     <div class="container">
-        <h1>Welcome to RealLife Color Splash</h1>
+        <h1>Welcome to Real-Life Color Splash</h1>
         <p>Location Should Auto Update, If It Doesn't, Try:</p>
 
-        <button onclick="getLocation()">Refresh Current Location</button>
+        <button class="neon" onclick="getLocation()">Refresh Current Location</button>
         
         <div class="info-box">
             <p id="location">📍 Your location will appear here...</p>
@@ -21,16 +21,16 @@
             <p id="nearbyPlayers">🕵️‍♂️ NO players currently within your range.</p>
         </div>
 
-        <button id="startGameBtn" style="display: none;" onclick="startGame()">🎮 Start Game</button>
+        <button class="neon" id="startGameBtn" style="display: none;" onclick="startGame()">ReStart Game</button>
         <p id="gameStatus">Loading game status...</p>
 
-        <button id="killBtn" style="display: none;" onclick="kill()">💀 Kill</button>
+        <button class="kill" id="killBtn" style="display: none;" onclick="kill()">💀 Kill</button>
         <p id="cooldown"></p>
 
-        <a href="/logout"><button>🚪 Logout</button></a>
+        <a href="/logout"><button class="neon" >🚪 Logout</button></a>
 
         <br><br>
-        <button class="danger" onclick="clearUsers()">⚠️ Clear All Users (Except Admin)</button>
+        <button class="alert" id="clearusers" style="display: none;" onclick="clearUsers()">⚠️ Clear All Users (Except Admin)</button>
     </div>
 
     <script src="mainmenu.js"></script>
