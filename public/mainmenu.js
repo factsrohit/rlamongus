@@ -159,12 +159,29 @@ function startGame() {
         .then(data => alert(data))
         .catch(error => console.error("Error starting game:", error));
 }
+function updaterole()
+    {
+        fetch("/getRole")
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById("playerRole").innerHTML = `🕵️‍♂️ Role: <strong>${data.role}</strong>`;
+                } else {
+                    document.getElementById("playerRole").innerHTML = `🕵️‍♂️ Role: Unknown`;
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching role:", error);
+                document.getElementById("playerRole").innerHTML = `🕵️‍♂️ Role: Error loading`;
+            });
+};
 
 
 
 // Get location on page load
 window.onload = () => {
     checkAdmin();
+    setInterval(updaterole, 5000);
     setInterval(updateGameStatus, 5000);
     setInterval(updateNearbyPlayers, 5000);
     localStorage.clear();  // Clear stored location data on refresh

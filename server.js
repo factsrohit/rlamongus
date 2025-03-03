@@ -3,11 +3,12 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
 const sqlite3 = require('sqlite3').verbose();
+const path = require(`path`);
 
 const app = express();
 const port = 3000;
 
-const KILL_RANGE = 0.010; // ~7 meters
+const KILL_RANGE = 0.010; // ~10 meters
 const COOLDOWN_TIME = 30; // 30 seconds
 
 // Set up database
@@ -50,6 +51,11 @@ app.use(session({
 
 app.use(express.static('public')); // Serve static files (HTML, JS)
 
+// Set EJS as the templating engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views')); // Store templates in the 'views' folder
+
+
 // Authentication Middleware
 function isAuthenticated(req, res, next) {
     if (req.session.username) return next();
@@ -58,7 +64,7 @@ function isAuthenticated(req, res, next) {
 
 // Routes
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
-app.post('/register', (req, res) => {
+/*app.post('/register', (req, res) => {
     const { username, password } = req.body;
 
     bcrypt.hash(password, 10, (err, hash) => {
@@ -106,6 +112,58 @@ app.post('/login', (req, res) => {
                 res.redirect('/dashboard');
             } else {
                 res.send("Invalid password.");
+            }
+        });
+    });
+});
+
+*/
+
+// Register route
+app.post('/register', (req, res) => {
+    const { username, password } = req.body;
+
+    bcrypt.hash(password, 10, (err, hash) => {
+        if (err) {
+            console.error("Error hashing password:", err);
+            return res.render('error', { message: "Error hashing password. Please try again." });
+        }
+
+        db.run("INSERT INTO users (username, password, role) VALUES (?, ?, 'CREWMATE')", [username, hash], (err) => {
+            if (err) {
+                console.error("Error registering user:", err);
+                return res.render('error', { message: "User already exists. Please choose another username." });
+            }
+
+            req.session.username = username;
+            res.redirect('/dashboard.html');
+        });
+    });
+});
+
+// Login route
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+
+    db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
+        if (err) {
+            console.error("Database error:", err);
+            return res.render('error', { message: "Database error. Please try again later." });
+        }
+        
+        if (!user) return res.render('error', { message: "User not found. Please register first." });
+
+        bcrypt.compare(password, user.password, (err, result) => {
+            if (err) {
+                console.error("Bcrypt error:", err);
+                return res.render('error', { message: "Error checking password. Please try again." });
+            }
+
+            if (result) {
+                req.session.username = username;
+                res.redirect('/dashboard.html');
+            } else {
+                res.render('error', { message: "Invalid password. Please try again." });
             }
         });
     });
@@ -394,6 +452,16 @@ app.post('/start-game', async (req, res) => {
     }
 });
 
+app.get('/getRole', isAuthenticated, (req, res) => {
+    const username = req.session.username;
+
+    db.get(`SELECT role FROM users WHERE username = ?`, [username], (err, user) => {
+        if (err || !user) {
+            return res.json({ success: false, message: "Error fetching role" });
+        }
+        res.json({ success: true, role: user.role });
+    });
+});
 
 
 // Start server
