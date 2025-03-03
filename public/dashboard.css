@@ -19,6 +19,8 @@
   
   /* Base Elements - simplified */
   body {
+    background: url('A_futuristic_cyberpunk_cityscape_at_night_with_vib.png') no-repeat center center fixed;
+    background-size: cover;
     font-family: var(--font-secondary);
     background-color: var(--dark-bg);
     color: var(--primary-neon);
