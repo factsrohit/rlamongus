@@ -147,6 +147,8 @@ function checkAdmin() {
             if (data.isAdmin) {
                 document.getElementById("startGameBtn").style.display = "block";
                 document.getElementById("clearusers").style.display = "block";
+                document.getElementById("emergencystart").style.display = "block";
+                document.getElementById("emergencyend").style.display = "block";
             }
         })
         .catch(error => console.error("Error checking admin status:", error));
@@ -176,11 +178,41 @@ function updaterole()
             });
 };
 
+async function checkEmergencyStatus() {
+    try {
+        const meetingResponse = await fetch('/statusmeet');
+        const meetingData = await meetingResponse.json();
 
+        const adminResponse = await fetch('/check-admin');
+        const adminData = await adminResponse.json();
+
+        const overlay = document.getElementById('emergencyOverlay');
+
+        // Show overlay only if emergency meeting is active AND user is NOT admin
+        if (meetingData.emergency_meeting && !adminData.isAdmin) {
+            overlay.style.display = "block";
+        } else {
+            overlay.style.display = "none";
+        }
+    } catch (error) {
+        console.error("Error checking emergency status:", error);
+    }
+}
+
+async function startMeeting() {
+    await fetch('/startmeet', { method: 'POST' });
+    alert("Emergency Meeting Started!");
+}
+
+async function endMeeting() {
+    await fetch('/endmeet', { method: 'POST' });
+    alert("Emergency Meeting Ended!");
+}
 
 // Get location on page load
 window.onload = () => {
     checkAdmin();
+    setInterval(checkEmergencyStatus, 5000);
     setInterval(updaterole, 5000);
     setInterval(updateGameStatus, 5000);
     setInterval(updateNearbyPlayers, 5000);

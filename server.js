@@ -31,6 +31,14 @@ db.run(`CREATE TABLE IF NOT EXISTS locations (
     longitude REAL
 )`);
 
+db.run(`CREATE TABLE IF NOT EXISTS settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    emergency_meeting INTEGER DEFAULT 0
+);
+INSERT INTO settings (emergency_meeting) VALUES (0);
+`);
+
+
 function clearLocationData() {
     db.run("DELETE FROM locations", (err) => {
         if (err) {
@@ -60,6 +68,13 @@ app.set('views', path.join(__dirname, 'views')); // Store templates in the 'view
 function isAuthenticated(req, res, next) {
     if (req.session.username) return next();
     res.redirect('/');
+}
+function isemAdmin(req, res, next) {
+    if (req.session.username === 'admin') {
+        next();
+    } else {
+        res.status(403).json({ success: false, message: "Unauthorized" });
+    }
 }
 
 // Routes
@@ -290,6 +305,11 @@ function getDistance(lat1, lon1, lat2, lon2) {
 app.post('/kill', isAuthenticated, (req, res) => {
     const username = req.session.username;
     const now = Math.floor(Date.now() / 1000);
+    db.get(`SELECT emergency_meeting FROM settings`, (err, row) => {
+        if (row.emergency_meeting) {
+            return res.status(403).json({ success: false, message: "Emergency meeting active, actions restricted!" });
+        }
+    });
 
     db.get(`SELECT role, last_kill_time FROM users WHERE username = ?`, [username], (err, user) => {
         if (err || !user) {
@@ -463,6 +483,34 @@ app.get('/getRole', isAuthenticated, (req, res) => {
     });
 });
 
+app.post('/startmeet', isemAdmin, (req, res) => {
+    db.run(`UPDATE settings SET emergency_meeting = 1`, (err) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: "Error starting meeting" });
+        }
+        res.json({ success: true, message: "Emergency meeting started!" });
+    });
+});
+
+// End Emergency Meeting (Admin Only)
+app.post('/endmeet', isemAdmin, (req, res) => {
+    db.run(`UPDATE settings SET emergency_meeting = 0`, (err) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: "Error ending meeting" });
+        }
+        res.json({ success: true, message: "Emergency meeting ended!" });
+    });
+});
+
+// Check if meeting is active
+app.get('/statusmeet', (req, res) => {
+    db.get(`SELECT emergency_meeting FROM settings`, (err, row) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: "Error fetching meeting status" });
+        }
+        res.json({ emergency_meeting: row.emergency_meeting });
+    });
+});
 
 // Start server
 const kill = require('kill-port');

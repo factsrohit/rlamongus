@@ -29,7 +29,13 @@
         <a href="/logout"><button class="neon" >🚪 Logout</button></a>
 
         <br><br>
+        <button class="alert" id="emergencystart" style="display: none;"  onclick="startMeeting()">🚨 Start Emergency Meeting</button>
+        <button class="alert" id="emergencyend" style="display: none;" onclick="endMeeting()">✅ End Emergency Meeting</button>
         <button class="alert" id="clearusers" style="display: none;" onclick="clearUsers()">⚠️ Clear All Users (Except Admin)</button>
+    </div>
+    <div id="emergencyOverlay" class="overlay">
+        <h2>🚨 Emergency Meeting 🚨</h2>
+        <p>All actions are disabled until the admin ends the meeting. Meet At the Server table</p>
     </div>
 
     <script src="mainmenu.js"></script>
