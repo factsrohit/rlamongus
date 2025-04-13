@@ -145,10 +145,13 @@ function checkAdmin() {
         .then(response => response.json())
         .then(data => {
             if (data.isAdmin) {
+                document.getElementById("admincontrols").style.display = "block";
+                
+                /*document.getElementById("add-task-form").style.display = "block";
                 document.getElementById("startGameBtn").style.display = "block";
                 document.getElementById("clearusers").style.display = "block";
                 document.getElementById("emergencystart").style.display = "block";
-                document.getElementById("emergencyend").style.display = "block";
+                document.getElementById("emergencyend").style.display = "block";*/
             }
         })
         .catch(error => console.error("Error checking admin status:", error));
@@ -208,6 +211,27 @@ async function endMeeting() {
     await fetch('/endmeet', { method: 'POST' });
     alert("Emergency Meeting Ended!");
 }
+
+document.getElementById("add-task-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    const form = e.target;
+    const body = {
+        username: 'admin', // or get from session/login
+        question: form.question.value,
+        answer: form.answer.value,
+        hint: form.hint.value
+    };
+
+    const res = await fetch('/add-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+
+    const result = await res.text();
+    alert(result);
+});
 
 // Get location on page load
 window.onload = () => {

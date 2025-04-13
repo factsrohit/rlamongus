@@ -31,6 +31,13 @@ db.run(`CREATE TABLE IF NOT EXISTS locations (
     longitude REAL
 )`);
 
+db.run(`CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    hint TEXT
+);
+`);
 db.run(`CREATE TABLE IF NOT EXISTS settings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     emergency_meeting INTEGER DEFAULT 0
@@ -511,6 +518,75 @@ app.get('/statusmeet', (req, res) => {
         res.json({ emergency_meeting: row.emergency_meeting });
     });
 });
+
+
+
+const getRandomTasks = async () => {
+    try {
+        // Fetch a random selection of tasks
+        const allTasks = await db.all("SELECT * FROM tasks");
+        const randomTasks = [];
+        for (let i = 0; i < 3; i++) { // Assign 3 random tasks to each player
+            const randomTask = allTasks[Math.floor(Math.random() * allTasks.length)];
+            randomTasks.push(randomTask);
+        }
+        return randomTasks;
+    } catch (error) {
+        console.error("Error fetching tasks:", error);
+        return [];
+    }
+};
+
+
+app.post('/request-hint', async (req, res) => {
+    const { username, taskId } = req.body;
+
+    try {
+        // Get the task from the task pool (replace with your actual task fetching logic)
+        const task = await db.get(`SELECT * FROM tasks WHERE id = ?`, [taskId]);
+
+        if (!task) {
+            return res.status(404).send("Task not found.");
+        }
+
+        // Return the hint for the task
+        res.send({ hint: task.hint });
+    } catch (error) {
+        console.error("Error fetching hint:", error);
+        res.status(500).send("Failed to fetch hint.");
+    }
+});
+
+app.post('/add-task', async (req, res) => {
+    const { username, question, answer, hint } = req.body;
+
+    // Optional: Only allow admin to add tasks
+    if (username !== 'admin') {
+        return res.status(403).send("Only the admin can add tasks.");
+    }
+
+    try {
+        await db.run(
+            `INSERT INTO tasks (question, answer, hint) VALUES (?, ?, ?)`,
+            [question, answer, hint]
+        );
+        res.send("Task added successfully.");
+    } catch (error) {
+        console.error("Error adding task:", error);
+        res.status(500).send("Failed to add task.");
+    }
+});
+
+app.get('/tasks', async (req, res) => {
+    const tasks = await db.all("SELECT * FROM tasks");
+    console.log("tasks sent");
+    res.json(tasks);
+});
+
+
+
+
+
 
 // Start server
 const kill = require('kill-port');

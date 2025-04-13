@@ -20,7 +20,7 @@
             <p id="loclastupdate">⏳ Location hasn't been updated in DB.</p>
             <p id="nearbyPlayers">🕵️‍♂️ NO players currently within your range.</p>
         </div>
-        <button class="neon" id="startGameBtn" style="display: none;" onclick="startGame()">ReStart Game</button>
+        
         <p id="gameStatus">Loading game status...</p>
         <p id="playerRole">🕵️‍♂️ Role: Loading...</p>
         <button class="kill" id="killBtn" style="display: none;" onclick="kill()">💀 Kill</button>
@@ -29,9 +29,22 @@
         <a href="/logout"><button class="neon" >🚪 Logout</button></a>
 
         <br><br>
-        <button class="alert" id="emergencystart" style="display: none;"  onclick="startMeeting()">🚨 Start Emergency Meeting</button>
-        <button class="alert" id="emergencyend" style="display: none;" onclick="endMeeting()">✅ End Emergency Meeting</button>
-        <button class="alert" id="clearusers" style="display: none;" onclick="clearUsers()">⚠️ Clear All Users (Except Admin)</button>
+    </div>
+    <div id="admincontrols" class="container" style="display: none;">
+        <h2>ADMIN CONTROLS</h2>
+        <button class="neon" id="startGameBtn" onclick="startGame()">ReStart Game</button>
+        <button class="alert" id="emergencystart"   onclick="startMeeting()">🚨 Start Emergency Meeting</button>
+        <button class="alert" id="emergencyend" onclick="endMeeting()">✅ End Emergency Meeting</button>
+        <button class="alert" id="clearusers"  onclick="clearUsers()">⚠️ Clear All Users (Except Admin)</button>
+        <div class="info-box">
+        <form id="add-task-form" >
+            <input type="text" name="question" placeholder="Task Question" required />
+            <input type="text" name="answer" placeholder="Correct Answer" required />
+            <input type="text" name="hint" placeholder="Hint" />
+            <button type="submit">Add Task</button>
+        </form>
+        </div>
+        
     </div>
     <div id="emergencyOverlay" class="overlay">
         <h2>🚨 Emergency Meeting 🚨</h2>
