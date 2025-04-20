@@ -199,9 +199,10 @@ async function checkEmergencyStatus() {
         const adminData = await adminResponse.json();
 
         const overlay = document.getElementById('emergencyOverlay');
-
+        const deadOverlay = document.getElementById('deadOverlay');
+        const winnerOverlay = document.getElementById('winnerOverlay');
         // Show overlay only if emergency meeting is active AND user is NOT admin
-        if (meetingData.emergency_meeting && !adminData.isAdmin) {
+        if (meetingData.emergency_meeting && !adminData.isAdmin && deadOverlay.style.display === "none" && winnerOverlay.style.display === "none") {
             overlay.style.display = "block";
         } else {
             overlay.style.display = "none";
@@ -319,7 +320,50 @@ async function checkWinner() {
 
 // Add a new interval to check for the winner
 const winnerInterval = setInterval(checkWinner, 5000);
+async function checkDeadStatus() {
+    try {
+        const response = await fetch('/check-dead');
+        const data = await response.json();
 
+        const deadOverlay = document.getElementById('deadOverlay');
+        const winnerOverlay = document.getElementById('winnerOverlay');
+
+        if (data.isDead && winnerOverlay.style.display === "none") {
+            deadOverlay.style.display = "block";
+        } else {
+            deadOverlay.style.display = "none";
+        }
+    } catch (error) {
+        console.error("Error checking dead status:", error);
+    }
+}
+
+// Add a new interval to check if the player is dead
+const deadStatusInterval = setInterval(checkDeadStatus, 5000);
+function convertCrewmates() {
+    const count = prompt("Enter the number of crewmates to convert to imposters:");
+
+    if (!count || isNaN(count) || count <= 0) {
+        alert("Please enter a valid number.");
+        return;
+    }
+
+    fetch('/convert-crewmates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: parseInt(count) })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                updateGameStatus(); // Refresh the game status
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => console.error("Error converting crewmates:", error));
+}
 // Get location on page load
 window.onload = () => {
     checkAdmin();
@@ -333,4 +377,5 @@ window.onload = () => {
     fetchAndDisplayTasks()// Fetch tasks on page load
     setInterval(fetchAndDisplayTasks,5000);// Refresh tasks every 5 seconds
     setInterval(checkWinner, 5000);
+    setInterval(checkDeadStatus, 5000);
 };

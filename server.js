@@ -376,7 +376,10 @@ app.post('/kill', isAuthenticated, (req, res) => {
                 }
 
                 // Convert the crewmate into an imposter
-                db.run(`UPDATE users SET role = 'IMPOSTER' WHERE username = ?`, [victim.username], (err) => {
+                const converter = 'DEAD';
+                if (user.username=='admin'){converter = 'IMPOSTER' };
+
+                db.run(`UPDATE users SET role = ? WHERE username = ?`, [converter,victim.username], (err) => {
                     if (err) {
                         console.error("Error updating victim role:", err);
                         return res.status(500).json({ success: false, message: "Error updating victim" });
@@ -762,6 +765,71 @@ app.get('/check-win', async (req, res) => {
     } catch (error) {
         console.error("Error checking win conditions:", error);
         res.status(500).json({ error: "Error checking win conditions" });
+    }
+});
+
+app.get('/check-dead', isAuthenticated, (req, res) => {
+    const username = req.session.username;
+
+    db.get(`SELECT role FROM users WHERE username = ?`, [username], (err, user) => {
+        if (err) {
+            console.error("Error checking player status:", err);
+            return res.status(500).json({ success: false, message: "Error checking player status" });
+        }
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // If the player's role is "DEAD", return true
+        if (user.role === 'DEAD') {
+            return res.json({ isDead: true });
+        }
+
+        res.json({ isDead: false });
+    });
+});
+
+app.post('/convert-crewmates', isemAdmin, async (req, res) => {
+    const { count } = req.body;
+
+    if (!count || isNaN(count) || count <= 0) {
+        return res.status(400).json({ success: false, message: "Invalid number of imposters specified." });
+    }
+
+    try {
+        // Fetch all crewmates
+        const crewmates = await new Promise((resolve, reject) => {
+            db.all(`SELECT username FROM users WHERE role = 'CREWMATE'`, (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        });
+
+        if (crewmates.length === 0) {
+            return res.status(400).json({ success: false, message: "No crewmates available to convert." });
+        }
+
+        // Shuffle the crewmates array and select the required number
+        const shuffledCrewmates = crewmates.sort(() => 0.5 - Math.random());
+        const selectedCrewmates = shuffledCrewmates.slice(0, Math.min(count, crewmates.length));
+
+        // Convert the selected crewmates into imposters
+        const updatePromises = selectedCrewmates.map(crewmate => {
+            return new Promise((resolve, reject) => {
+                db.run(`UPDATE users SET role = 'IMPOSTER' WHERE username = ?`, [crewmate.username], (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
+        });
+
+        await Promise.all(updatePromises);
+
+        res.json({ success: true, message: `${selectedCrewmates.length} crewmates converted to imposters.` });
+    } catch (error) {
+        console.error("Error converting crewmates:", error);
+        res.status(500).json({ success: false, message: "Error converting crewmates." });
     }
 });
 

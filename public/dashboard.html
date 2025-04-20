@@ -40,6 +40,7 @@
         <button class="neon" id="startGameBtn" onclick="startGame()">ReStart Game</button>
         <button class="alert" id="emergencystart"   onclick="startMeeting()">🚨 Start Emergency Meeting</button>
         <button class="alert" id="emergencyend" onclick="endMeeting()">✅ End Emergency Meeting</button>
+        <button class="alert" id="convertCrewmatesBtn" onclick="convertCrewmates()">🔄 Convert Crewmates to Imposters</button>
         <button class="alert" id="clearusers"  onclick="clearUsers()">⚠️ Clear All Users (Except Admin)</button>
         <div class="info-box">
         <form id="add-task-form" >
@@ -58,6 +59,10 @@
     <div id="winnerOverlay" class="overlay" style="display: none;">
         <h2 id="winnerMessage">🎉 Winner: </h2>
         <p>The game has ended. Please wait for the admin to restart the game.</p>
+    </div>
+    <div id="deadOverlay" class="overlay" style="display: none;">
+        <h2>💀 You Are Dead 💀</h2>
+        <p>You can no longer perform actions. Wait for the game to end.</p>
     </div>
     <script src="mainmenu.js"></script>
 
