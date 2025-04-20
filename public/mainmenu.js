@@ -158,10 +158,19 @@ function checkAdmin() {
 }
 
 // Start the game (set a random crewmate as an imposter)
-function startGame() {
+/*function startGame() {
     fetch('/start-game', { method: 'POST' })
         .then(response => response.text())
         .then(data => alert(data))
+        .catch(error => console.error("Error starting game:", error));
+}*/
+function startGame() {
+    fetch('/start-game', { method: 'POST' })
+        .then(response => response.text())
+        .then(data => {
+            alert(data); // Notify the user that the game has restarted
+            fetchAndDisplayTasks(); // Refresh the task list immediately
+        })
         .catch(error => console.error("Error starting game:", error));
 }
 function updaterole()
@@ -232,6 +241,58 @@ document.getElementById("add-task-form").addEventListener("submit", async (e) =>
     const result = await res.text();
     alert(result);
 });
+function fetchAndDisplayTasks() {
+    fetch('/my-tasks')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const taskList = document.getElementById("taskList");
+                taskList.innerHTML = ""; // Clear existing tasks
+
+                data.tasks.forEach(task => {
+                    const taskItem = document.createElement("li");
+                    taskItem.textContent = `${task.question} - ${task.completed ? "Completed" : "Incomplete"}`;
+
+                    if (!task.completed) {
+                        const answerButton = document.createElement("button");
+                        answerButton.textContent = "Answer";
+                        answerButton.onclick = () => submitTask(task.id);
+                        taskItem.appendChild(answerButton);
+                    }
+
+                    taskList.appendChild(taskItem);
+                });
+            } else {
+                alert("Failed to fetch tasks.");
+            }
+        })
+        .catch(error => console.error("Error fetching tasks:", error));
+}
+function submitTask(taskId) {
+    const answer = prompt("Enter your answer for the task:");
+
+    if (!answer) {
+        alert("Answer cannot be empty.");
+        return;
+    }
+
+    fetch('/submit-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId, answer })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                fetchAndDisplayTasks(); // Refresh the task list
+            } else {
+                alert(data.message);
+                fetchAndDisplayTasks()
+            }
+        })
+        .catch(error => console.error("Error submitting task:", error));
+}
 
 // Get location on page load
 window.onload = () => {
@@ -243,4 +304,6 @@ window.onload = () => {
     localStorage.clear();  // Clear stored location data on refresh
     getLocation();         // Start fetching location
     checkRole();
+    fetchAndDisplayTasks// Fetch tasks on page load
+    setInterval(fetchAndDisplayTasks(),5000);// Refresh tasks every 5 seconds
 };

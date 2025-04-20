@@ -44,7 +44,14 @@ db.run(`CREATE TABLE IF NOT EXISTS settings (
 );
 INSERT INTO settings (emergency_meeting) VALUES (0);
 `);
-
+db.run(`
+    CREATE TABLE IF NOT EXISTS player_tasks (
+        username TEXT NOT NULL,
+        task_id INTEGER NOT NULL,
+        completed INTEGER DEFAULT 0,
+        FOREIGN KEY (task_id) REFERENCES tasks(id)
+    )
+`);
 
 function clearLocationData() {
     db.run("DELETE FROM locations", (err) => {
@@ -464,7 +471,7 @@ app.get('/check-admin', (req, res) => {
 });
 
 
-
+/*
 app.post('/start-game', async (req, res) => {
     try {
         // Reset all players to "CREWMATE" except the admin
@@ -477,6 +484,53 @@ app.post('/start-game', async (req, res) => {
         console.error("Error resetting game:", error);
         res.status(500).send("Failed to reset game.");
     }
+});
+*/
+app.post('/start-game', (req, res) => {
+    // Step 1: Reset player roles
+    db.run(`UPDATE users SET role = 'CREWMATE' WHERE username != 'admin'`, function(err) {
+        if (err) {
+            console.error("Error resetting roles:", err);
+            return res.status(500).send("Failed to reset roles.");
+        }
+
+        // Step 2: Clear all old player tasks
+        db.run(`DELETE FROM player_tasks`, function(err) {
+            if (err) {
+                console.error("Error clearing old player tasks:", err);
+                return res.status(500).send("Failed to clear player tasks.");
+            }
+
+            // Step 3: Fetch all players (excluding admin)
+            db.all(`SELECT username FROM users WHERE username != 'admin'`, (err, players) => {
+                if (err) {
+                    console.error("Error fetching players:", err);
+                    return res.status(500).send("Failed to fetch players.");
+                }
+
+                // Step 4: Fetch all available tasks
+                db.all(`SELECT id FROM tasks`, (err, allTasks) => {
+                    if (err) {
+                        console.error("Error fetching tasks:", err);
+                        return res.status(500).send("Failed to fetch tasks.");
+                    }
+
+                    const insertStmt = db.prepare(`INSERT INTO player_tasks (username, task_id, completed) VALUES (?, ?, 0)`);
+
+                    players.forEach(player => {
+                        for (let i = 0; i < 3; i++) {
+                            const randomTask = allTasks[Math.floor(Math.random() * allTasks.length)];
+                            insertStmt.run(player.username, randomTask.id);
+                        }
+                    });
+
+                    insertStmt.finalize();
+
+                    res.send("Game started: All players reset and new tasks assigned.");
+                });
+            });
+        });
+    });
 });
 
 app.get('/getRole', isAuthenticated, (req, res) => {
@@ -520,22 +574,23 @@ app.get('/statusmeet', (req, res) => {
 });
 
 
-
 const getRandomTasks = async () => {
     try {
-        // Fetch a random selection of tasks
         const allTasks = await db.all("SELECT * FROM tasks");
-        const randomTasks = [];
-        for (let i = 0; i < 3; i++) { // Assign 3 random tasks to each player
-            const randomTask = allTasks[Math.floor(Math.random() * allTasks.length)];
-            randomTasks.push(randomTask);
+
+        // Shuffle using Fisher-Yates
+        for (let i = allTasks.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [allTasks[i], allTasks[j]] = [allTasks[j], allTasks[i]];
         }
-        return randomTasks;
+
+        return allTasks.slice(0, 3);
     } catch (error) {
         console.error("Error fetching tasks:", error);
         return [];
     }
 };
+
 
 
 app.post('/request-hint', async (req, res) => {
@@ -583,7 +638,78 @@ app.get('/tasks', async (req, res) => {
     res.json(tasks);
 });
 
+app.post('/assign-tasks', async (req, res) => {
+    const { username } = req.body;
 
+    if (!username) {
+        return res.status(400).send("Username is required.");
+    }
+
+    try {
+        const tasks = await assignTasksToPlayer(username);
+        res.send({ message: "Tasks assigned.", tasks });
+    } catch (error) {
+        res.status(500).send("Failed to assign tasks.");
+    }
+});
+app.get('/my-tasks', isAuthenticated, (req, res) => {
+    const username = req.session.username;
+
+    db.all(`
+        SELECT tasks.id, tasks.question, player_tasks.completed 
+        FROM player_tasks 
+        JOIN tasks ON player_tasks.task_id = tasks.id 
+        WHERE player_tasks.username = ?
+    `, [username], (err, rows) => {
+        if (err) {
+            console.error("Error fetching user tasks:", err);
+            return res.status(500).json({ success: false, message: "Error fetching tasks" });
+        }
+
+        res.json({ success: true, tasks: rows });
+    });
+});
+
+
+app.post('/submit-task', isAuthenticated, (req, res) => {
+    const username = req.session.username;
+    const { taskId, answer } = req.body;
+
+    if (!taskId || !answer) {
+        return res.status(400).json({ success: false, message: "Task ID and answer are required." });
+    }
+
+    // Fetch the correct answer for the task
+    db.get(`SELECT answer FROM tasks WHERE id = ?`, [taskId], (err, task) => {
+        if (err) {
+            console.error("Error fetching task:", err);
+            return res.status(500).json({ success: false, message: "Error fetching task." });
+        }
+
+        if (!task) {
+            return res.status(404).json({ success: false, message: "Task not found." });
+        }
+
+        // Check if the player's answer matches the correct answer
+        if (task.answer.toLowerCase() === answer.toLowerCase()) {
+            // Mark the task as completed
+            db.run(
+                `UPDATE player_tasks SET completed = 1 WHERE username = ? AND task_id = ?`,
+                [username, taskId],
+                (err) => {
+                    if (err) {
+                        console.error("Error updating task status:", err);
+                        return res.status(500).json({ success: false, message: "Error updating task status." });
+                    }
+
+                    res.json({ success: true, message: "Task completed successfully!" });
+                }
+            );
+        } else {
+            res.json({ success: false, message: "Incorrect answer. Try again!" });
+        }
+    });
+});
 
 
 
