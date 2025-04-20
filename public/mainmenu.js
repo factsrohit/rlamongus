@@ -294,6 +294,32 @@ function submitTask(taskId) {
         .catch(error => console.error("Error submitting task:", error));
 }
 
+async function checkWinner() {
+    try {
+        const response = await fetch('/check-win');
+        const data = await response.json();
+        const adminResponse = await fetch('/check-admin');
+        const adminData = await adminResponse.json();
+
+        if (data.winner  && !adminData.isAdmin) {
+            const overlay = document.getElementById('winnerOverlay');
+            const winnerMessage = document.getElementById('winnerMessage');
+
+            winnerMessage.textContent = `🎉 Winner: ${data.winner}`;
+            overlay.style.display = "block";
+
+        }else{
+            const overlay = document.getElementById('winnerOverlay');
+            overlay.style.display = "none"; 
+        }
+    } catch (error) {
+        console.error("Error checking winner:", error);
+    }
+}
+
+// Add a new interval to check for the winner
+const winnerInterval = setInterval(checkWinner, 5000);
+
 // Get location on page load
 window.onload = () => {
     checkAdmin();
@@ -304,6 +330,7 @@ window.onload = () => {
     localStorage.clear();  // Clear stored location data on refresh
     getLocation();         // Start fetching location
     checkRole();
-    fetchAndDisplayTasks// Fetch tasks on page load
-    setInterval(fetchAndDisplayTasks(),5000);// Refresh tasks every 5 seconds
+    fetchAndDisplayTasks()// Fetch tasks on page load
+    setInterval(fetchAndDisplayTasks,5000);// Refresh tasks every 5 seconds
+    setInterval(checkWinner, 5000);
 };

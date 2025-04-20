@@ -712,7 +712,58 @@ app.post('/submit-task', isAuthenticated, (req, res) => {
 });
 
 
+app.get('/check-win', async (req, res) => {
+    try {
+        // Fetch counts of crewmates and imposters
+        const crewmatesRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
 
+        const impostersRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'IMPOSTER'`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        // Fetch total tasks and completed tasks
+        const totalTasksRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as total FROM player_tasks`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const completedTasksRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as completed FROM player_tasks WHERE completed = 1`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const crewmates = crewmatesRow.count;
+        const imposters = impostersRow.count;
+        const totalTasks = totalTasksRow.total;
+        const completedTasks = completedTasksRow.completed;
+
+        // Check win conditions
+        if (crewmates < imposters) {
+            return res.json({ winner: 'IMPOSTERS' });
+        }
+
+        if (completedTasks >= totalTasks * 0.75) {
+            return res.json({ winner: 'CREWMATES' });
+        }
+
+        res.json({ winner: null }); // No winner yet
+    } catch (error) {
+        console.error("Error checking win conditions:", error);
+        res.status(500).json({ error: "Error checking win conditions" });
+    }
+});
 
 // Start server
 const kill = require('kill-port');
