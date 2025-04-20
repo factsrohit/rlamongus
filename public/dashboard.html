@@ -20,6 +20,12 @@
             <p id="loclastupdate">⏳ Location hasn't been updated in DB.</p>
             <p id="nearbyPlayers">🕵️‍♂️ NO players currently within your range.</p>
         </div>
+        <div id="taskProgress" class="info-box">
+            <h3>Task Progress</h3>
+            <p id="totalTasks">Total Tasks: Loading...</p>
+            <p id="completedTasks">Completed Tasks: Loading...</p>
+            <p id="remainingTasks">Remaining Tasks: Loading...</p>
+        </div>
         
         <p id="gameStatus">Loading game status...</p>
         <p id="playerRole">🕵️‍♂️ Role: Loading...</p>
@@ -58,6 +64,7 @@
     </div>
     <div id="winnerOverlay" class="overlay" style="display: none;">
         <h2 id="winnerMessage">🎉 Winner: </h2>
+        <button class="neon" id="newgamebtn" onclick="startGame()" style="display: none;" >ReStart Game</button>
         <p>The game has ended. Please wait for the admin to restart the game.</p>
     </div>
     <div id="deadOverlay" class="overlay" style="display: none;">

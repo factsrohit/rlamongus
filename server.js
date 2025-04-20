@@ -521,7 +521,7 @@ app.post('/start-game', (req, res) => {
                     const insertStmt = db.prepare(`INSERT INTO player_tasks (username, task_id, completed) VALUES (?, ?, 0)`);
 
                     players.forEach(player => {
-                        for (let i = 0; i < 3; i++) {
+                        for (let i = 0; i < 4; i++) {
                             const randomTask = allTasks[Math.floor(Math.random() * allTasks.length)];
                             insertStmt.run(player.username, randomTask.id);
                         }
@@ -595,7 +595,7 @@ const getRandomTasks = async () => {
 };
 
 
-
+/*
 app.post('/request-hint', async (req, res) => {
     const { username, taskId } = req.body;
 
@@ -608,11 +608,33 @@ app.post('/request-hint', async (req, res) => {
         }
 
         // Return the hint for the task
-        res.send({ hint: task.hint });
+        res.json({ success: true, hint: task.hint });
+        //res.send({ hint: task.hint });
     } catch (error) {
         console.error("Error fetching hint:", error);
         res.status(500).send("Failed to fetch hint.");
     }
+});
+*/
+app.post('/request-hint', isAuthenticated, (req, res) => {
+    const { taskId } = req.body;
+
+    if (!taskId) {
+        return res.status(400).json({ success: false, message: "Task ID is required." });
+    }
+
+    db.get(`SELECT hint FROM tasks WHERE id = ?`, [taskId], (err, task) => {
+        if (err) {
+            console.error("Error fetching hint:", err);
+            return res.status(500).json({ success: false, message: "Error fetching hint." });
+        }
+
+        if (!task || !task.hint) {
+            return res.status(404).json({ success: false, message: "Hint not available for this task." });
+        }
+
+        res.json({ success: true, hint: task.hint });
+    });
 });
 
 app.post('/add-task', async (req, res) => {
@@ -830,6 +852,40 @@ app.post('/convert-crewmates', isemAdmin, async (req, res) => {
     } catch (error) {
         console.error("Error converting crewmates:", error);
         res.status(500).json({ success: false, message: "Error converting crewmates." });
+    }
+});
+
+app.get('/task-progress', isAuthenticated, async (req, res) => {
+    try {
+        // Fetch total tasks and completed tasks
+        const totalTasksRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as total FROM player_tasks`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const completedTasksRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as completed FROM player_tasks WHERE completed = 1`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const totalTasks = totalTasksRow.total || 0;
+        const completedTasks = completedTasksRow.completed || 0;
+
+        // Calculate the percentage of tasks completed
+        const percentageCompleted = totalTasks > 0 ? ((completedTasks )/ (totalTasks*0.75)) * 100 : 0;
+
+        res.json({
+            totalTasks,
+            completedTasks,
+            percentageCompleted: percentageCompleted.toFixed(2), // Round to 2 decimal places
+        });
+    } catch (error) {
+        console.error("Error fetching task progress:", error);
+        res.status(500).json({ error: "Error fetching task progress" });
     }
 });
 

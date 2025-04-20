@@ -242,7 +242,8 @@ document.getElementById("add-task-form").addEventListener("submit", async (e) =>
     const result = await res.text();
     alert(result);
 });
-function fetchAndDisplayTasks() {
+ function fetchAndDisplayTasks() {
+    
     fetch('/my-tasks')
         .then(response => response.json())
         .then(data => {
@@ -259,6 +260,11 @@ function fetchAndDisplayTasks() {
                         answerButton.textContent = "Answer";
                         answerButton.onclick = () => submitTask(task.id);
                         taskItem.appendChild(answerButton);
+
+                        const hintButton = document.createElement("button");
+                        hintButton.textContent = "Request Hint";
+                        hintButton.onclick = () => requestHint(task.id);
+                        taskItem.appendChild(hintButton);
                     }
 
                     taskList.appendChild(taskItem);
@@ -294,6 +300,22 @@ function submitTask(taskId) {
         })
         .catch(error => console.error("Error submitting task:", error));
 }
+function requestHint(taskId) {
+    fetch('/request-hint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Hint: ${data.hint}`);
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => console.error("Error requesting hint:", error));
+}
 
 async function checkWinner() {
     try {
@@ -302,13 +324,15 @@ async function checkWinner() {
         const adminResponse = await fetch('/check-admin');
         const adminData = await adminResponse.json();
 
-        if (data.winner  && !adminData.isAdmin) {
+        if (data.winner) {
             const overlay = document.getElementById('winnerOverlay');
             const winnerMessage = document.getElementById('winnerMessage');
-
             winnerMessage.textContent = `🎉 Winner: ${data.winner}`;
             overlay.style.display = "block";
-
+            if(adminData.isAdmin){
+                const restartButton = document.getElementById('newgamebtn');
+                restartButton.style.display = "block";
+            }
         }else{
             const overlay = document.getElementById('winnerOverlay');
             overlay.style.display = "none"; 
@@ -364,6 +388,24 @@ function convertCrewmates() {
         })
         .catch(error => console.error("Error converting crewmates:", error));
 }
+
+function fetchTaskProgress() {
+    fetch('/task-progress')
+        .then(response => response.json())
+        .then(data => {
+            const totalTasksElement = document.getElementById('totalTasks');
+            const completedTasksElement = document.getElementById('completedTasks');
+            const remainingTasksElement = document.getElementById('remainingTasks');
+
+            totalTasksElement.textContent = `Total Tasks: ${data.totalTasks}`;
+            completedTasksElement.textContent = `Completed Tasks: ${data.completedTasks}`;
+            remainingTasksElement.textContent = `Remaining Tasks: ${(100 - data.percentageCompleted).toFixed(2)}%`;
+        })
+        .catch(error => console.error("Error fetching task progress:", error));
+}
+
+
+
 // Get location on page load
 window.onload = () => {
     checkAdmin();
@@ -378,4 +420,6 @@ window.onload = () => {
     setInterval(fetchAndDisplayTasks,5000);// Refresh tasks every 5 seconds
     setInterval(checkWinner, 5000);
     setInterval(checkDeadStatus, 5000);
+    // Add a new interval to periodically fetch task progress
+    setInterval(fetchTaskProgress, 5000);
 };
