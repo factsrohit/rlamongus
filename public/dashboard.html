@@ -59,9 +59,34 @@
         
     </div>
     <div id="emergencyOverlay" class="overlay">
-        <h2>🚨 Emergency Meeting 🚨</h2>
-        <p>All actions are disabled until the admin ends the meeting. Meet At the Server table</p>
+    <h2>🚨 Emergency Meeting 🚨</h2>
+    <p>All actions are disabled until the admin ends the meeting. Meet at the Server table.</p>
+
+    <div id="votingSection">
+        <h3>Vote to eject a player:</h3>
+        <ul id="playerVoteList" style="list-style: none; padding: 0;"></ul>
+        <button onclick="castVote(null)">Skip Vote</button>
     </div>
+    </div>
+
+    <div id="ejectionPopup" style="
+        display: none;
+        position: fixed;
+        top: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #111;
+        color: #fff;
+        padding: 20px 30px;
+        border: 3px solid #f00;
+        border-radius: 12px;
+        z-index: 9999;
+        font-size: 18px;
+        text-align: center;
+        box-shadow: 0 0 10px red;
+        transition: opacity 0.3s ease;
+        ">
+        </div>
     <div id="winnerOverlay" class="overlay" style="display: none;">
         <h2 id="winnerMessage">🎉 Winner: </h2>
         <button class="neon" id="newgamebtn" onclick="startGame()" style="display: none;" >ReStart Game</button>

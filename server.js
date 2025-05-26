@@ -38,6 +38,13 @@ db.run(`CREATE TABLE IF NOT EXISTS tasks (
     hint TEXT
 );
 `);
+
+db.run(`CREATE TABLE IF NOT EXISTS votes (
+    voter VARCHAR(255) PRIMARY KEY,
+    vote_for VARCHAR(255) -- NULL means "Skip Vote"
+);
+`);
+
 db.run(`CREATE TABLE IF NOT EXISTS settings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     emergency_meeting INTEGER DEFAULT 0
@@ -52,6 +59,8 @@ db.run(`
         FOREIGN KEY (task_id) REFERENCES tasks(id)
     )
 `);
+
+
 
 function clearLocationData() {
     db.run("DELETE FROM locations", (err) => {
@@ -557,14 +566,145 @@ app.post('/startmeet', isemAdmin, (req, res) => {
 });
 
 // End Emergency Meeting (Admin Only)
-app.post('/endmeet', isemAdmin, (req, res) => {
+/*
+app.post('/endmeet', isemAdmin, async (req, res) => {
+       try {
+        const [players] = await db.run(`SELECT username FROM users WHERE role != 'DEAD'`);
+        const totalPlayers = players.map(p => p.name);
+        const totalVotesPossible = totalPlayers.length;
+
+        const [votes] = await db.run(`SELECT voter, vote_for FROM votes`);
+        const tally = {};
+        const votedPlayers = new Set();
+
+        for (let { voter, vote_for } of votes) {
+            votedPlayers.add(voter);
+            const vote = vote_for || 'SKIP';
+            tally[vote] = (tally[vote] || 0) + 1;
+        }
+
+        const missingVotes = totalPlayers.filter(p => !votedPlayers.has(p));
+        for (let missing of missingVotes) {
+            tally['SKIP'] = (tally['SKIP'] || 0) + 1;
+        }
+
+        let maxVotes = 0;
+        let ejectedPlayer = null;
+
+        for (let [name, count] of Object.entries(tally)) {
+            if (name !== 'SKIP' && count > maxVotes) {
+                maxVotes = count;
+                ejectedPlayer = name;
+            }
+        }
+
+        const skipCount = tally['SKIP'] || 0;
+
+        let resultMessage;
+        let ejectedRole = null;
+
+        if (!ejectedPlayer || skipCount >= maxVotes) {
+            resultMessage = 'No one was ejected. (Skipped)';
+        } else {
+            const [[{ role }]] = await db.run(`SELECT role FROM users WHERE username = ?`, [ejectedPlayer]);
+            ejectedRole = role;
+            await db.query(`UPDATE users SET role = 'DEAD' WHERE username = ?`, [ejectedPlayer]);
+            resultMessage = `${ejectedPlayer} was ejected. They were a ${role}.`;
+        }
+
+        await db.query(`DELETE FROM votes`);
+
+        res.json({
+            message: resultMessage,
+            ejected: ejectedPlayer,
+            role: ejectedRole // IMPOSTER or CREWMATE
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to end meeting' });
+    }
+
     db.run(`UPDATE settings SET emergency_meeting = 0`, (err) => {
         if (err) {
             return res.status(500).json({ success: false, message: "Error ending meeting" });
         }
         res.json({ success: true, message: "Emergency meeting ended!" });
     });
+});*/
+app.post('/endmeet', isemAdmin, (req, res) => {
+    // Get alive player IDs
+    db.all(`SELECT id FROM users WHERE role != 'DEAD'`, (err, players) => {
+        if (err) return res.status(500).json({ success: false, message: "Error fetching players" });
+
+        const aliveIds = players.map(p => p.id);
+
+        // Get all votes
+        db.all(`SELECT voter, vote_for FROM votes`, (err, votes) => {
+            if (err) return res.status(500).json({ success: false, message: "Error fetching votes" });
+
+            const tally = {};
+            const votedPlayers = new Set();
+
+            for (let { voter, vote_for } of votes) {
+                votedPlayers.add(voter);
+                const vote = vote_for ?? 'SKIP';
+                tally[vote] = (tally[vote] || 0) + 1;
+            }
+
+            // Add implicit SKIPs
+            const missingVotes = aliveIds.filter(id => !votedPlayers.has(id));
+            for (let missing of missingVotes) {
+                tally['SKIP'] = (tally['SKIP'] || 0) + 1;
+            }
+
+            // Count most-voted (excluding SKIP)
+            let maxVotes = 0;
+            let ejectedPlayerId = null;
+
+            for (let [targetId, count] of Object.entries(tally)) {
+                if (targetId !== 'SKIP' && count > maxVotes) {
+                    maxVotes = count;
+                    ejectedPlayerId = targetId;
+                }
+            }
+
+            const skipCount = tally['SKIP'] || 0;
+
+            // If SKIP wins or no one was voted
+            if (!ejectedPlayerId || skipCount >= maxVotes) {
+                db.run(`DELETE FROM votes`);
+                db.run(`UPDATE settings SET emergency_meeting = 0`);
+                return res.json({
+                    success: true,
+                    message: "No one was ejected. (Skipped)",
+                    ejected: null,
+                    role: null
+                });
+            }
+
+            // Else, someone is ejected
+            db.get(`SELECT username, role FROM users WHERE id = ?`, [ejectedPlayerId], (err, user) => {
+                if (err || !user) return res.status(500).json({ success: false, message: "Error fetching ejected player" });
+
+                db.run(`UPDATE users SET role = 'DEAD' WHERE id = ?`, [ejectedPlayerId], (err2) => {
+                    if (err2) return res.status(500).json({ success: false, message: "Error updating user role" });
+
+                    db.run(`DELETE FROM votes`);
+                    db.run(`UPDATE settings SET emergency_meeting = 0`);
+
+                    return res.json({
+                        success: true,
+                        message: `${user.username} was ejected. They were a ${user.role}.`,
+                        ejected: user.username,
+                        role: user.role
+                    });
+                });
+            });
+        });
+    });
 });
+
 
 // Check if meeting is active
 app.get('/statusmeet', (req, res) => {
@@ -888,6 +1028,29 @@ app.get('/task-progress', isAuthenticated, async (req, res) => {
         res.status(500).json({ error: "Error fetching task progress" });
     }
 });
+
+
+app.get('/players', (req, res) => {
+  db.all(`SELECT id, username FROM users WHERE role != 'DEAD' ORDER BY username ASC`, (err, rows) => {
+    if (err) return res.status(500).json({ error: "Failed to fetch players" });
+    res.json({ players: rows });
+  });
+});
+
+app.post('/vote', (req, res) => {
+  const voterId = req.session.userId; // or however you're storing user ID
+  const voteForId = req.body.vote_for ?? null;
+
+  if (!voterId) return res.status(403).json({ error: "Not authenticated" });
+
+  db.run(`DELETE FROM votes WHERE voter = ?`, [voterId], () => {
+    db.run(`INSERT INTO votes (voter, vote_for) VALUES (?, ?)`, [voterId, voteForId], (err) => {
+      if (err) return res.status(500).json({ error: "Failed to record vote" });
+      res.json({ message: "Vote submitted successfully" });
+    });
+  });
+});
+
 
 // Start server
 const kill = require('kill-port');

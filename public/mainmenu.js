@@ -192,6 +192,7 @@ function updaterole()
 
 async function checkEmergencyStatus() {
     try {
+        loadVotingList();
         const meetingResponse = await fetch('/statusmeet');
         const meetingData = await meetingResponse.json();
 
@@ -218,9 +219,55 @@ async function startMeeting() {
 }
 
 async function endMeeting() {
-    await fetch('/endmeet', { method: 'POST' });
-    alert("Emergency Meeting Ended!");
+    /*fetch('/endmeet', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            let msg = "";
+
+            if (!data.ejected) {
+                msg = "😐 No one was ejected. (Skipped)";
+            } else if (data.role === 'IMPOSTER') {
+                msg = `✅ ${data.ejected} was an Imposter!`;
+            } else if (data.role === 'CREWMATE') {
+                msg = `❌ ${data.ejected} was a Crewmate!`;
+            }
+
+            alert(msg);
+
+        });*/
+        try {
+    const res = await fetch('/endmeet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      showEjectionPopup(data.message);
+    } else {
+      alert("Error: " + (data.message || "Unknown error"));
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Failed to end emergency meeting.");
+  }
 }
+
+function showEjectionPopup(message) {
+  const popup = document.getElementById('ejectionPopup');
+  popup.textContent = message;
+  popup.style.display = 'block';
+  popup.style.opacity = '1';
+
+  setTimeout(() => {
+    popup.style.opacity = '0';
+    setTimeout(() => {
+      popup.style.display = 'none';
+    }, 300); // matches CSS transition
+  }, 5000); // auto-close after 5s
+}
+
 
 document.getElementById("add-task-form").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -405,6 +452,42 @@ function fetchTaskProgress() {
 }
 
 
+let myPlayerId = null; // set this from session or backend if needed
+
+async function loadVotingList() {
+  const res = await fetch('/players');
+  const data = await res.json(); // expected: [{ id: 1, username: "Red" }, ...]
+  const sortedPlayers = data.players.sort((a, b) => a.username.localeCompare(b.username));
+
+  const list = document.getElementById('playerVoteList');
+  list.innerHTML = '';
+
+  for (const player of sortedPlayers) {
+    // Hide your own name if you don't want to vote for yourself
+    const li = document.createElement('li');
+    li.innerHTML = `
+      ${player.username}
+      <button onclick="castVote(${player.id})">Vote</button>
+    `;
+    list.appendChild(li);
+  }
+}
+
+async function castVote(playerId) {
+  try {
+    const res = await fetch('/vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vote_for: playerId })
+    });
+
+    const result = await res.json();
+    alert(result.message || 'Vote submitted!');
+  } catch (err) {
+    console.error(err);
+    alert('Failed to cast vote');
+  }
+}
 
 // Get location on page load
 window.onload = () => {
