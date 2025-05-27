@@ -41,7 +41,7 @@ db.run(`CREATE TABLE IF NOT EXISTS tasks (
 
 db.run(`CREATE TABLE IF NOT EXISTS votes (
     voter INTEGER PRIMARY KEY,
-    vote_for INTEGER -- NULL means "Skip Vote"
+    vote_for INTEGER 
 );
 `);
 
