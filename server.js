@@ -40,8 +40,8 @@ db.run(`CREATE TABLE IF NOT EXISTS tasks (
 `);
 
 db.run(`CREATE TABLE IF NOT EXISTS votes (
-    voter VARCHAR(255) PRIMARY KEY,
-    vote_for VARCHAR(255) -- NULL means "Skip Vote"
+    voter INTEGER PRIMARY KEY,
+    vote_for INTEGER -- NULL means "Skip Vote"
 );
 `);
 
@@ -199,6 +199,7 @@ app.post('/login', (req, res) => {
 
             if (result) {
                 req.session.username = username;
+                req.session.userId = user.id;
                 res.redirect('/dashboard.html');
             } else {
                 res.render('error', { message: "Invalid password. Please try again." });
@@ -665,7 +666,7 @@ app.post('/endmeet', isemAdmin, (req, res) => {
             for (let [targetId, count] of Object.entries(tally)) {
                 if (targetId !== 'SKIP' && count > maxVotes) {
                     maxVotes = count;
-                    ejectedPlayerId = targetId;
+                    ejectedPlayerId = parseInt(targetId);
                 }
             }
 
@@ -1038,8 +1039,8 @@ app.get('/players', (req, res) => {
 });
 
 app.post('/vote', (req, res) => {
-  const voterId = req.session.userId; // or however you're storing user ID
-  const voteForId = req.body.vote_for ?? null;
+  const voterId = parseInt(req.session.userId); // or however you're storing user ID
+  const voteForId = parseInt(req.body.vote_for) ?? null;
 
   if (!voterId) return res.status(403).json({ error: "Not authenticated" });
 

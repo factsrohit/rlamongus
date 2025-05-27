@@ -473,6 +473,7 @@ async function loadVotingList() {
   }
 }
 
+
 async function castVote(playerId) {
   try {
     const res = await fetch('/vote', {
@@ -488,6 +489,7 @@ async function castVote(playerId) {
     alert('Failed to cast vote');
   }
 }
+
 
 // Get location on page load
 window.onload = () => {

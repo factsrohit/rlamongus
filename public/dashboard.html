@@ -64,7 +64,9 @@
 
     <div id="votingSection">
         <h3>Vote to eject a player:</h3>
-        <ul id="playerVoteList" style="list-style: none; padding: 0;"></ul>
+        <div style="max-height: 300px; overflow-y: auto; margin-top: 20px;">
+            <ul id="playerVoteList" style="list-style: none; padding: 0;"></ul>
+        </div>
         <button onclick="castVote(null)">Skip Vote</button>
     </div>
     </div>
