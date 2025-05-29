@@ -165,7 +165,16 @@ function checkAdmin() {
         .catch(error => console.error("Error starting game:", error));
 }*/
 function startGame() {
-    fetch('/start-game', { method: 'POST' })
+     const numTasks = parseInt(prompt("Enter number of tasks to assign per player:", "4"));
+    if (isNaN(numTasks) || numTasks <= 0) {
+        alert("Please enter a valid number greater than 0.");
+        return;
+    }
+
+    fetch('/start-game', { method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numTasks })
+        })
         .then(response => response.text())
         .then(data => {
             alert(data); // Notify the user that the game has restarted

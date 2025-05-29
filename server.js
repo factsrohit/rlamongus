@@ -500,6 +500,7 @@ app.post('/start-game', async (req, res) => {
 });
 */
 app.post('/start-game', (req, res) => {
+    const numTasks = parseInt(req.body.numTasks) || 4; // default to 4 if missing or invalid
     // Step 1: Reset player roles
     db.run(`UPDATE users SET role = 'CREWMATE' WHERE username != 'admin'`, function(err) {
         if (err) {
@@ -531,7 +532,7 @@ app.post('/start-game', (req, res) => {
                     const insertStmt = db.prepare(`INSERT INTO player_tasks (username, task_id, completed) VALUES (?, ?, 0)`);
 
                     players.forEach(player => {
-                        for (let i = 0; i < 4; i++) {
+                        for (let i = 0; i < numTasks; i++) {
                             const randomTask = allTasks[Math.floor(Math.random() * allTasks.length)];
                             insertStmt.run(player.username, randomTask.id);
                         }
