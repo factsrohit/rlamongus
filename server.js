@@ -1065,14 +1065,14 @@ async function startServer() {
         clearLocationData();
         // Start the server after killing the port
         app.listen(port, () => {
-            console.log(`Server running at http://localhost:${port}`);
+            console.log(`Server running at https://organic-halibut-5gr6wrwr9647h4756-${port}.app.github.dev/`);
         });
     } catch (err) {
         console.error('Error freeing port:', err);
         clearLocationData();
         // Start the server even if the port can't be freed (in case kill fails)
         app.listen(port, () => {
-            console.log(`Server running at http://localhost:${port}`);
+            console.log(`Server running at https://organic-halibut-5gr6wrwr9647h4756-${port}.app.github.dev/`);
         });
     }
 }
