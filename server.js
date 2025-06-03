@@ -47,7 +47,8 @@ db.run(`CREATE TABLE IF NOT EXISTS votes (
 
 db.run(`CREATE TABLE IF NOT EXISTS settings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    emergency_meeting INTEGER DEFAULT 0
+    emergency_meeting INTEGER DEFAULT 0,
+     tasks_per_player INTEGER DEFAULT 4
 );
 INSERT INTO settings (emergency_meeting) VALUES (0);
 `);
@@ -288,7 +289,10 @@ app.get('/nearby-players', (req, res) => {
         const { latitude, longitude } = player;
 
         // Fetch all other players' locations
-        db.all(`SELECT username, latitude, longitude FROM locations WHERE username != ?`, [username], (err, rows) => {
+        db.all(`SELECT locations.username, latitude, longitude 
+    FROM locations 
+    JOIN users ON users.username = locations.username 
+    WHERE locations.username != ? AND users.role != 'DEAD'`, [username], (err, rows) => {
             if (err) {
                 console.error("Error fetching nearby players:", err);
                 return res.json({ count: 0, players: [] });
@@ -403,7 +407,7 @@ app.post('/kill', isAuthenticated, (req, res) => {
                         }
 
                         console.log(`${username} killed ${victim.username}.`);
-                        res.json({ success: true, message: `${victim.username} is now an imposter!` });
+                        res.json({ success: true, message: `${victim.username} is now GONE FOR GOOD!` });
                     });
                 });
             });
@@ -538,9 +542,43 @@ app.post('/start-game', (req, res) => {
                         }
                     });
 
-                    insertStmt.finalize();
+                    //insertStmt.finalize();
 
-                    res.send("Game started: All players reset and new tasks assigned.");
+                    //res.send("Game started: All players reset and new tasks assigned.");
+                    insertStmt.finalize(err => {
+                        if (err) {
+                            console.error("Error finalizing insertStmt:", err);
+                            return res.status(500).send("Failed to assign tasks.");
+                        }
+
+                        // Step 5: Update or insert tasks_per_player in settings table
+                        db.get(`SELECT id FROM settings ORDER BY id DESC LIMIT 1`, (err, row) => {
+                            if (err) {
+                                console.error("Error reading settings:", err);
+                                return res.status(500).send("Failed to read settings.");
+                            }
+
+                            if (row) {
+                                // Update existing settings row
+                                db.run(`UPDATE settings SET tasks_per_player = ? WHERE id = ?`, [numTasks, row.id], (err) => {
+                                    if (err) {
+                                        console.error("Error updating tasks_per_player:", err);
+                                        return res.status(500).send("Failed to update settings.");
+                                    }
+                                    res.send("Game started: All players reset, new tasks assigned, settings updated.");
+                                });
+                            } else {
+                                // Insert new settings row
+                                db.run(`INSERT INTO settings (tasks_per_player) VALUES (?)`, [numTasks], (err) => {
+                                    if (err) {
+                                        console.error("Error inserting settings:", err);
+                                        return res.status(500).send("Failed to insert settings.");
+                                    }
+                                    res.send("Game started: All players reset, new tasks assigned, settings created.");
+                                });
+                            }
+                    })});
+                
                 });
             });
         });
@@ -878,7 +916,7 @@ app.post('/submit-task', isAuthenticated, (req, res) => {
     });
 });
 
-
+/*
 app.get('/check-win', async (req, res) => {
     try {
         // Fetch counts of crewmates and imposters
@@ -930,7 +968,188 @@ app.get('/check-win', async (req, res) => {
         console.error("Error checking win conditions:", error);
         res.status(500).json({ error: "Error checking win conditions" });
     }
+});*/
+/*
+app.get('/check-win', async (req, res) => {
+    try {
+        // Fetch counts of crewmates and imposters
+        const crewmatesRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const impostersRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'IMPOSTER'`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        // Fetch total and completed tasks
+        const totalTasksRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as total FROM player_tasks`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const completedTasksRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as completed FROM player_tasks WHERE completed = 1`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        // Get alive players and total players
+        const alivePlayersRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const totalPlayersRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as count FROM users`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const crewmates = crewmatesRow.count;
+        const imposters = impostersRow.count;
+        const totalTasks = totalTasksRow.total;
+        const completedTasks = completedTasksRow.completed;
+        const alivePlayers = alivePlayersRow.count;
+        const totalPlayers = totalPlayersRow.count;
+
+        // WIN: Imposters outnumber crewmates
+        if (crewmates < imposters) {
+            return res.json({ winner: 'IMPOSTERS' });
+        }
+
+        // WIN: Task completion logic with alive % scaling
+        const alivePercent = alivePlayers / totalPlayers;
+        let taskThreshold = 0.75;
+
+        if (alivePercent <= 0.30) {
+            taskThreshold = 0.50;
+        }
+
+        if (completedTasks >= totalTasks * taskThreshold) {
+            return res.json({ winner: 'CREWMATES' });
+        }
+
+        res.json({ winner: null }); // No winner yet
+    } catch (error) {
+        console.error("Error checking win conditions:", error);
+        res.status(500).json({ error: "Error checking win conditions" });
+    }
 });
+*/
+app.get('/check-win', async (req, res) => {
+    try {
+        // Count current CREWMATES and IMPOSTERS
+        const crewmatesRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const impostersRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'IMPOSTER'`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        // Get total & completed tasks
+        const totalTasksRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as total FROM player_tasks`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const completedTasksRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as completed FROM player_tasks WHERE completed = 1`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        // Get alive and total player counts
+        const alivePlayersRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const totalPlayersRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as count FROM users`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        // Extract data
+        const crewmates = crewmatesRow.count;
+        const imposters = impostersRow.count;
+        const totalTasks = totalTasksRow.total;
+        const completedTasks = completedTasksRow.completed;
+        const alivePlayers = alivePlayersRow.count;
+        const totalPlayers = totalPlayersRow.count;
+
+        // --- Imposter win check ---
+        if (crewmates < imposters) {
+            return res.json({ winner: 'IMPOSTERS' });
+        }
+
+        // --- Scalable task win check ---
+         // Fetch tasks_per_player setting from settings table
+        const settingsRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT tasks_per_player FROM settings ORDER BY id DESC LIMIT 1`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        // Default fallback if not set
+        const baseTasksPerPlayer = settingsRow && settingsRow.tasks_per_player ? settingsRow.tasks_per_player : 10;
+
+
+        const alivePercent = alivePlayers / totalPlayers;
+
+        // Base requirement scales with alive players
+        let taskTarget = baseTasksPerPlayer * alivePlayers;
+
+        // Apply difficulty scaling (makes it slightly harder when more are alive)
+        const difficultyModifier = 1 + ((1 - alivePercent) * 0.5); // max 1.5x
+        taskTarget = taskTarget * difficultyModifier;
+
+        // Cap task requirement to 90% of all tasks
+        const hardCap = totalTasks * 0.9;
+        taskTarget = Math.min(taskTarget, hardCap);
+
+        // Final task win check
+        if (completedTasks >= taskTarget) {
+            return res.json({ winner: 'CREWMATES' });
+        }
+
+        // No winner yet
+        res.json({ winner: null });
+
+    } catch (error) {
+        console.error("Error checking win conditions:", error);
+        res.status(500).json({ error: "Error checking win conditions" });
+    }
+});
+
+
+
 
 app.get('/check-dead', isAuthenticated, (req, res) => {
     const username = req.session.username;
@@ -996,7 +1215,7 @@ app.post('/convert-crewmates', isemAdmin, async (req, res) => {
         res.status(500).json({ success: false, message: "Error converting crewmates." });
     }
 });
-
+/*
 app.get('/task-progress', isAuthenticated, async (req, res) => {
     try {
         // Fetch total tasks and completed tasks
@@ -1029,7 +1248,82 @@ app.get('/task-progress', isAuthenticated, async (req, res) => {
         console.error("Error fetching task progress:", error);
         res.status(500).json({ error: "Error fetching task progress" });
     }
+});*/
+app.get('/task-progress', isAuthenticated, async (req, res) => {
+    try {
+        // Fetch tasks_per_player from settings (latest row)
+        const settingsRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT tasks_per_player FROM settings ORDER BY id DESC LIMIT 1`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        // Default fallback if not set
+        const baseTasksPerPlayer = settingsRow && settingsRow.tasks_per_player ? settingsRow.tasks_per_player : 10;
+
+        // Fetch alive and total players count
+        const alivePlayersRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const totalPlayersRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as count FROM users`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const alivePlayers = alivePlayersRow.count || 0;
+        const totalPlayers = totalPlayersRow.count || 1; // prevent division by zero
+
+        // Fetch total and completed player tasks
+        const totalTasksRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as total FROM player_tasks`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const completedTasksRow = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as completed FROM player_tasks WHERE completed = 1`, (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+
+        const totalTasks = totalTasksRow.total || 0;
+        const completedTasks = completedTasksRow.completed || 0;
+
+        // Calculate task target dynamically, same as /check-win logic
+        const alivePercent = alivePlayers / totalPlayers;
+
+        let taskTarget = baseTasksPerPlayer * alivePlayers;
+        const difficultyModifier = 1 + ((1 - alivePercent) * 0.5); // max 1.5x
+        taskTarget = taskTarget * difficultyModifier;
+
+        // Cap at 90% of total tasks
+        const hardCap = totalTasks * 0.9;
+        taskTarget = Math.min(taskTarget, hardCap);
+
+        // Calculate percentage relative to the dynamic task target
+        const percentageCompleted = taskTarget > 0 ? (completedTasks / taskTarget) * 100 : 0;
+
+        res.json({
+            totalTasks,
+            completedTasks,
+            taskTarget: Math.round(taskTarget),
+            percentageCompleted: percentageCompleted.toFixed(2), // rounded to 2 decimals
+        });
+    } catch (error) {
+        console.error("Error fetching task progress:", error);
+        res.status(500).json({ error: "Error fetching task progress" });
+    }
 });
+
 
 
 app.get('/players', (req, res) => {
@@ -1065,14 +1359,14 @@ async function startServer() {
         clearLocationData();
         // Start the server after killing the port
         app.listen(port, () => {
-            console.log(`Server running at http://localhost:${port}`);
+            console.log(`Server running at https://organic-halibut-5gr6wrwr9647h4756-${port}.app.github.dev/`);
         });
     } catch (err) {
         console.error('Error freeing port:', err);
         clearLocationData();
         // Start the server even if the port can't be freed (in case kill fails)
         app.listen(port, () => {
-            console.log(`Server running at http://localhost:${port}`);
+            console.log(`Server running at https://organic-halibut-5gr6wrwr9647h4756-${port}.app.github.dev/`);
         });
     }
 }
