@@ -92,9 +92,9 @@ function checkRole() {
 
         // Ensure the user is an imposter before showing the Kill button
         if (data.currentUserRole === "IMPOSTER") {
-            document.getElementById("killBtn").style.display = "block";
+            document.getElementById("imposterstuff").style.display = "block";
         } else {
-            document.getElementById("killBtn").style.display = "none";
+            document.getElementById("imposterstuff").style.display = "none";
         }
         
     });
@@ -126,6 +126,56 @@ function startCooldown() {
         }
     }, 1000);
 }
+
+function killRemote() {
+    const target = prompt("Enter the exact username of the crewmate to kill:");
+
+    if (!target) {
+        alert("Kill cancelled. No target provided.");
+        return;
+    }
+
+    fetch('/kill-remote', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ target })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) {
+            startRemoteKillCooldown(); // cooldown for remote kills
+        }
+    })
+    .catch(err => {
+        console.error("Kill failed:", err);
+        alert("Remote kill failed.");
+    });
+}
+
+function startRemoteKillCooldown() {
+    let timeLeft = 300; // 5 minutes in seconds
+    const cooldown = document.getElementById("remoteCooldown");
+    const btn = document.getElementById("remoteKillBtn");
+
+    btn.disabled = true;
+    const interval = setInterval(() => {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        cooldown.textContent = `Remote kill available in: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        timeLeft--;
+
+        if (timeLeft < 0) {
+            clearInterval(interval);
+            cooldown.textContent = "";
+            btn.disabled = false;
+        }
+    }, 1000);
+}
+
+
 
 
 // Fetch game status and show "Start Game" button for admin

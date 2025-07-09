@@ -33,9 +33,14 @@
             <h3>Your Tasks</h3>
             <ul id="taskList"></ul>
         </div>
-
-        <button class="kill" id="killBtn" style="display: none;" onclick="kill()">💀 Kill</button>
+        <div id = "imposterstuff" class = "container" style = "display: none" >
+        <button class="kill" id="killBtn" onclick="kill()">💀 Kill</button>
         <p id="cooldown"></p>
+        <button class="kill" id="remoteKillBtn" onclick="killRemote()"> Snipe </button>
+        <p id="remoteCooldown"></p>
+        </div>
+
+        
 
         <a href="/logout"><button class="neon" >🚪 Logout</button></a>
 

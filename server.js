@@ -415,6 +415,61 @@ app.post('/kill', isAuthenticated, (req, res) => {
     });
 });
 
+app.post('/kill-remote', isAuthenticated, (req, res) => {
+    const killer = req.session.username;
+    const target = req.body.target?.trim();
+
+    if (!target) {
+        return res.status(400).json({ success: false, message: "Target username required" });
+    }
+
+    // Step 1: Check emergency meeting status
+    db.get(`SELECT emergency_meeting FROM settings`, (err, row) => {
+        if (err) {
+            console.error("Error checking settings:", err);
+            return res.status(500).json({ success: false, message: "Error checking emergency status" });
+        }
+
+        if (row && row.emergency_meeting) {
+            return res.status(403).json({ success: false, message: "Emergency meeting active, actions restricted!" });
+        }
+
+        // Step 2: Ensure the killer is an imposter
+        db.get(`SELECT role FROM users WHERE username = ?`, [killer], (err, user) => {
+            if (err || !user) {
+                console.error("Error fetching killer:", err);
+                return res.status(500).json({ success: false, message: "Error fetching killer" });
+            }
+
+            if (user.role !== 'IMPOSTER') {
+                return res.status(403).json({ success: false, message: "Only imposters can remote kill" });
+            }
+
+            // Step 3: Validate the target is a crewmate
+            db.get(`SELECT role FROM users WHERE username = ?`, [target], (err, victim) => {
+                if (err) {
+                    console.error("Error finding target:", err);
+                    return res.status(500).json({ success: false, message: "Error finding target" });
+                }
+
+                if (!victim || victim.role !== 'CREWMATE') {
+                    return res.status(404).json({ success: false, message: "Target must be an existing CREWMATE" });
+                }
+
+                // Step 4: Kill the crewmate
+                db.run(`UPDATE users SET role = 'DEAD' WHERE username = ?`, [target], (err) => {
+                    if (err) {
+                        console.error("Error updating victim role:", err);
+                        return res.status(500).json({ success: false, message: "Error applying remote kill" });
+                    }
+
+                    console.log(`${killer} remotely killed ${target}.`);
+                    return res.json({ success: true, message: `${target} has been remotely killed.` });
+                });
+            });
+        });
+    });
+});
 
 
 // Get Dashboard Stats
