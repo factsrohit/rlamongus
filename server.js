@@ -315,6 +315,27 @@ app.get('/nearby-players', (req, res) => {
     });
 });
 
+app.get('/all-imposters', (req, res) => {
+    const username = req.session.username;
+    if (!username) return res.status(401).send("Not logged in");
+
+    db.all(`
+        SELECT username 
+        FROM users 
+        WHERE role = 'IMPOSTER'
+    `, (err, rows) => {
+        if (err) {
+            console.error("Error fetching imposters:", err);
+            return res.json({ count: 0, imposters: [] });
+        }
+
+        res.json({
+            count: rows.length,
+            imposters: rows.map(row => row.username)
+        });
+    });
+});
+
 
 // JavaScript Haversine Function
 function getDistance(lat1, lon1, lat2, lon2) {

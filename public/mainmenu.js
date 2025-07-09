@@ -75,6 +75,16 @@ function updateNearbyPlayers() {
         .catch(error => console.error("Error fetching nearby players:", error));
 }
 
+function updateImposters() {
+    fetch('/all-imposters')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("impostersList").textContent =
+                `Imposters (${data.count}): ${data.imposters.join(", ")}`;
+        })
+        .catch(error => console.error("Error fetching imposters:", error));
+}
+
 function clearUsers() {
     if (confirm("Are you sure you want to delete all users except the admin?")) {
         fetch('/clear-users', { method: 'POST' })
@@ -553,17 +563,20 @@ async function castVote(playerId) {
 // Get location on page load
 window.onload = () => {
     checkAdmin();
-    setInterval(checkEmergencyStatus, 5000);
+    setInterval(checkEmergencyStatus, 5000);// Check emergency status every 5 seconds
     setInterval(updaterole, 5000);
-    setInterval(updateGameStatus, 5000);
-    setInterval(updateNearbyPlayers, 5000);
+    setInterval(updateGameStatus, 5000);// Update game status every 5 seconds
+    setInterval(updateNearbyPlayers, 5000);// Update nearby players every 5 seconds
     localStorage.clear();  // Clear stored location data on refresh
     getLocation();         // Start fetching location
-    checkRole();
+    checkRole(); // Check user role on page load
+    setInterval(checkRole(), 5000);// Check user role every 5 seconds
     fetchAndDisplayTasks()// Fetch tasks on page load
     setInterval(fetchAndDisplayTasks,5000);// Refresh tasks every 5 seconds
-    setInterval(checkWinner, 5000);
-    setInterval(checkDeadStatus, 5000);
+    setInterval(checkWinner, 5000);// Check for winner every 5 seconds
+    setInterval(checkDeadStatus, 5000);//check if player is dead every 5 seconds
     // Add a new interval to periodically fetch task progress
     setInterval(fetchTaskProgress, 5000);
+    setInterval(updateImposters, 5000); // refresh imposters list every 5 seconds
+
 };
