@@ -1285,6 +1285,10 @@ app.get('/check-win', async (req, res) => {
         const difficultyModifier = 1 + ((1 - alivePercent) * 0.5); // max 1.5x
         taskTarget = taskTarget * difficultyModifier;
 
+        // Apply minimum and maximum caps
+        // Ensure at least 70% of total tasks are required 
+        const minRequired = totalTasks * 0.7; // 70% minimum cap
+        taskTarget = Math.max(minRequired, taskTarget);
         // Cap task requirement to 90% of all tasks
         const hardCap = totalTasks * 0.9;
         taskTarget = Math.min(taskTarget, hardCap);
