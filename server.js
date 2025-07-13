@@ -11,12 +11,16 @@ const port = 3000;
 const KILL_RANGE = 0.010; // ~10 meters
 const COOLDOWN_TIME = 30; // 30 seconds
 
+const adminUsername = 'admin';
+const adminPassword = 'admin';
+
 // Set up database
 const db = new sqlite3.Database('db.sqlite', (err) => {
     if (err) console.error(err.message);
     console.log("Connected to SQLite database.");
 });
 
+/*
 // Create users table if not exists
 db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,6 +64,81 @@ db.run(`
         FOREIGN KEY (task_id) REFERENCES tasks(id)
     )
 `);
+*/
+// Create users table
+db.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT DEFAULT 'CREWMATE',
+    last_kill_time INTEGER DEFAULT 0
+);`);
+
+db.get(`SELECT 1 FROM users WHERE username = ?`, [adminUsername], (err, row) => {
+    if (err) return console.error("Error checking admin user:", err);
+
+    if (!row) {
+        bcrypt.hash(adminPassword, 10, (err, hash) => {
+            if (err) return console.error("Error hashing password:", err);
+
+            db.run(
+                `INSERT INTO users (username, password, role) VALUES (?, ?, 'IMPOSTER')`,
+                [adminUsername, hash],
+                (err) => {
+                    if (err) console.error("Error inserting admin user:", err);
+                    else console.log("Default admin user inserted.");
+                }
+            );
+        });
+    }
+});
+
+
+// Create locations table
+db.run(`CREATE TABLE IF NOT EXISTS locations (
+    username TEXT PRIMARY KEY,
+    latitude REAL,
+    longitude REAL
+);`);
+
+// Create tasks table
+db.run(`CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    hint TEXT
+);`);
+
+db.get(`SELECT 1 FROM tasks LIMIT 1`, (err, row) => {
+    if (!row) {
+        db.run(`INSERT INTO tasks (question, answer, hint) VALUES ('What is an apple?', 'fruit', 'the answer is a type of food that grows on trees')`);
+    }
+});
+
+
+// Create votes table
+db.run(`CREATE TABLE IF NOT EXISTS votes (
+    voter INTEGER PRIMARY KEY,
+    vote_for INTEGER
+);`);
+
+// Create settings table
+db.run(`CREATE TABLE IF NOT EXISTS settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    emergency_meeting INTEGER DEFAULT 0,
+    tasks_per_player INTEGER DEFAULT 4
+);`);
+
+// Insert default settings row if not exists
+db.run(`INSERT OR IGNORE INTO settings (id) VALUES (1);`);
+
+// Create player_tasks table
+db.run(`CREATE TABLE IF NOT EXISTS player_tasks (
+    username TEXT NOT NULL,
+    task_id INTEGER NOT NULL,
+    completed INTEGER DEFAULT 0,
+    FOREIGN KEY (task_id) REFERENCES tasks(id)
+);`);
 
 
 
