@@ -8,9 +8,6 @@ const path = require(`path`);
 const app = express();
 const port = 3000;
 
-const KILL_RANGE = 0.010; // ~10 meters
-const COOLDOWN_TIME = 30; // 30 seconds
-
 const adminUsername = 'admin';
 const adminPassword = 'admin';
 
@@ -20,51 +17,6 @@ const db = new sqlite3.Database('db.sqlite', (err) => {
     console.log("Connected to SQLite database.");
 });
 
-/*
-// Create users table if not exists
-db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
-    password TEXT,
-    role TEXT DEFAULT "CREWMATE",
-    last_kill_time INTEGER DEFAULT 0
-)`);
-db.run(`CREATE TABLE IF NOT EXISTS locations (
-    username TEXT PRIMARY KEY,
-    latitude REAL,
-    longitude REAL
-)`);
-
-db.run(`CREATE TABLE IF NOT EXISTS tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    question TEXT NOT NULL,
-    answer TEXT NOT NULL,
-    hint TEXT
-);
-`);
-
-db.run(`CREATE TABLE IF NOT EXISTS votes (
-    voter INTEGER PRIMARY KEY,
-    vote_for INTEGER 
-);
-`);
-
-db.run(`CREATE TABLE IF NOT EXISTS settings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    emergency_meeting INTEGER DEFAULT 0,
-     tasks_per_player INTEGER DEFAULT 4
-);
-INSERT INTO settings (id) VALUES (1) on conflict do nothing;
-`);
-db.run(`
-    CREATE TABLE IF NOT EXISTS player_tasks (
-        username TEXT NOT NULL,
-        task_id INTEGER NOT NULL,
-        completed INTEGER DEFAULT 0,
-        FOREIGN KEY (task_id) REFERENCES tasks(id)
-    )
-`);
-*/
 // Create users table
 db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -152,7 +104,7 @@ function clearLocationData() {
     });
 }
 // Middleware
-app.use(express.json()); 
+app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
     secret: 'your-secret-key',
@@ -182,60 +134,6 @@ function isemAdmin(req, res, next) {
 
 // Routes
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
-/*app.post('/register', (req, res) => {
-    const { username, password } = req.body;
-
-    bcrypt.hash(password, 10, (err, hash) => {
-        if (err) {
-            console.error("Error hashing password:", err);
-            return res.send("Error hashing password.");
-        }
-
-        db.run("INSERT INTO users (username, password, role) VALUES (?, ?, 'CREWMATE')", [username, hash], (err) => {
-            if (err) {
-                console.error("Error registering user:", err);
-                return res.send("User already exists.");
-            }
-
-            req.session.username = username;
-            res.redirect('/dashboard');
-        });
-    });
-});
-
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-
-    db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
-        if (err) {
-            console.error("Database error:", err);
-            return res.send("Error logging in.");
-        }
-        
-        if (!user) return res.send("User not found.");
-
-        //console.log(`Stored hash for ${username}:`, user.password);
-        //console.log(`Entered password:`, password);
-
-        bcrypt.compare(password, user.password, (err, result) => {
-            if (err) {
-                console.error("Bcrypt error:", err);
-                return res.send("Error checking password.");
-            }
-
-            //console.log("Password match result:", result);
-
-            if (result) {
-                req.session.username = username;
-                res.redirect('/dashboard');
-            } else {
-                res.send("Invalid password.");
-            }
-        });
-    });
-});
-
-*/
 
 // Register route
 app.post('/register', (req, res) => {
@@ -268,7 +166,7 @@ app.post('/login', (req, res) => {
             console.error("Database error:", err);
             return res.render('error', { message: "Database error. Please try again later." });
         }
-        
+
         if (!user) return res.render('error', { message: "User not found. Please register first." });
 
         bcrypt.compare(password, user.password, (err, result) => {
@@ -342,16 +240,9 @@ app.get('/get-location', (req, res) => {
             return res.status(500).send("Error fetching location");
         }
         if (!row) return res.send({ latitude: null, longitude: null });
-        
+
         res.send(row); // Send location data as JSON
     });
-    /*db.get("SELECT latitude, longitude FROM locations WHERE username = ?", [username], (err, row)=>{
-        if (err) {
-            console.error("Database error:", err);
-            return res.status(500).send("Error fetching location");
-        }
-        console.log(row)
-    })*/
 });
 
 app.get('/nearby-players', (req, res) => {
@@ -380,15 +271,15 @@ app.get('/nearby-players', (req, res) => {
             //console.log("Players found in bounding box:", rows);
 
             // Filter players within 7 meters using JavaScript
-            const nearbyPlayers = rows.filter(other => 
+            const nearbyPlayers = rows.filter(other =>
                 getDistance(latitude, longitude, other.latitude, other.longitude) <= 7
             );
 
             //console.log("Final nearby players:", nearbyPlayers);
 
-            res.json({ 
-                count: nearbyPlayers.length, 
-                players: nearbyPlayers.map(p => p.username) 
+            res.json({
+                count: nearbyPlayers.length,
+                players: nearbyPlayers.map(p => p.username)
             });
         });
     });
@@ -422,8 +313,8 @@ function getDistance(lat1, lon1, lat2, lon2) {
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c; // Distance in meters
 }
@@ -431,84 +322,55 @@ function getDistance(lat1, lon1, lat2, lon2) {
 // Kill Route
 
 app.post('/kill', isAuthenticated, (req, res) => {
-    const username = req.session.username;
-    const now = Math.floor(Date.now() / 1000);
-    db.get(`SELECT emergency_meeting FROM settings`, (err, row) => {
-        if (row.emergency_meeting) {
-            return res.status(403).json({ success: false, message: "Emergency meeting active, actions restricted!" });
-        }
-    });
+    const killer = req.session.username;
 
-    db.get(`SELECT role, last_kill_time FROM users WHERE username = ?`, [username], (err, user) => {
-        if (err || !user) {
-            console.error("Error fetching user:", err);
-            return res.status(500).json({ success: false, message: "Error fetching user" });
-        }
+    // Check killer role
+    db.get(`SELECT role FROM users WHERE username = ?`, [killer], (err, user) => {
+        if (err || !user) return res.status(500).json({ success: false, message: "Error fetching killer" });
+        if (user.role !== 'IMPOSTER') return res.status(403).json({ success: false, message: "Only imposters can kill" });
 
-        if (user.role !== 'IMPOSTER') {
-            return res.status(403).json({ success: false, message: "Only imposters can kill" });
-        }
+        // Find nearest crewmate (you can replace this with your location logic)
+        db.get(`SELECT username FROM users WHERE role = 'CREWMATE' ORDER BY RANDOM() LIMIT 1`, (err, victim) => {
+            if (err || !victim) return res.status(404).json({ success: false, message: "No crewmates available" });
 
-        if (user.last_kill_time && now - user.last_kill_time < COOLDOWN_TIME) {
-            return res.status(403).json({ success: false, message: "Kill on cooldown" });
-        }
+            const target = victim.username;
 
-        // Get the imposter's location
-        db.get(`SELECT latitude, longitude FROM locations WHERE username = ?`, [username], (err, imposter) => {
-            if (err || !imposter) {
-                console.error("Error fetching imposter location:", err);
-                return res.status(500).json({ success: false, message: "Error fetching location" });
-            }
+            // Mark victim as DEAD
+            db.run(`UPDATE users SET role = 'DEAD' WHERE username = ?`, [target], (err) => {
+                if (err) return res.status(500).json({ success: false, message: "Error killing target" });
 
-            // Find the nearest crewmate within range (fixed WHERE condition)
-            db.get(`
-                SELECT users.username, latitude, longitude,
-                (6371 * acos(
-                    cos(radians(?)) * cos(radians(latitude)) *
-                    cos(radians(longitude) - radians(?)) +
-                    sin(radians(?)) * sin(radians(latitude))
-                )) AS distance
-                FROM locations 
-                JOIN users ON locations.username = users.username
-                WHERE users.role = "CREWMATE"
-                AND (6371 * acos(
-                    cos(radians(?)) * cos(radians(latitude)) *
-                    cos(radians(longitude) - radians(?)) +
-                    sin(radians(?)) * sin(radians(latitude))
-                )) <= ?
-                ORDER BY distance ASC LIMIT 1
-            `, [imposter.latitude, imposter.longitude, imposter.latitude, 
-                imposter.latitude, imposter.longitude, imposter.latitude, KILL_RANGE], 
-            (err, victim) => {
-                if (err) {
-                    console.error("Error finding closest crewmate:", err);
-                    return res.status(500).json({ success: false, message: "Error finding victim" });
-                }
+                console.log(`${killer} killed ${target}`);
 
-                if (!victim) {
-                    return res.status(404).json({ success: false, message: "No crewmates in range" });
-                }
+                // Reassign victim's tasks
+                db.all(`SELECT task_id FROM player_tasks WHERE username = ? AND completed = 0`, [target], (err, tasks) => {
+                    if (err) return res.json({ success: true, message: `${target} has been killed (but error redistributing tasks)` });
 
-                // Convert the crewmate into an imposter
-                const converter = 'DEAD';
-                if (user.username=='admin'){converter = 'IMPOSTER' };
+                    const deadTasks = tasks.map(t => t.task_id);
 
-                db.run(`UPDATE users SET role = ? WHERE username = ?`, [converter,victim.username], (err) => {
-                    if (err) {
-                        console.error("Error updating victim role:", err);
-                        return res.status(500).json({ success: false, message: "Error updating victim" });
-                    }
+                    // Get total players for scaling
+                    db.get(`SELECT COUNT(*) as total FROM users`, (err, row) => {
+                        if (err) return res.json({ success: true, message: `${target} killed but scaling failed` });
 
-                    // Update the killer's cooldown time
-                    db.run(`UPDATE users SET last_kill_time = ? WHERE username = ?`, [now, username], (err) => {
-                        if (err) {
-                            console.error("Error updating cooldown:", err);
-                            return res.status(500).json({ success: false, message: "Error updating cooldown" });
-                        }
+                        const totalPlayers = row.total;
+                        const scalingFactor = Math.max(2, Math.floor(totalPlayers / 10));
 
-                        console.log(`${username} killed ${victim.username}.`);
-                        res.json({ success: true, message: `${victim.username} is now GONE FOR GOOD!` });
+                        // Redistribute some tasks
+                        db.all(`SELECT username FROM users WHERE role = 'CREWMATE'`, (err, survivors) => {
+                            if (err || survivors.length === 0) return;
+
+                            let survivorIndex = 0;
+                            deadTasks.forEach(taskId => {
+                                // Only reassign 1 out of scalingFactor tasks
+                                if (Math.random() < (1 / scalingFactor)) {
+                                    const assignedTo = survivors[survivorIndex % survivors.length].username;
+                                    db.run(`INSERT INTO player_tasks (username, task_id, completed) VALUES (?, ?, 0)`, [assignedTo, taskId]);
+                                    survivorIndex++;
+                                }
+                            });
+                        });
                     });
+
+                    return res.json({ success: true, message: `${target} has been killed.` });
                 });
             });
         });
@@ -519,57 +381,58 @@ app.post('/kill-remote', isAuthenticated, (req, res) => {
     const killer = req.session.username;
     const target = req.body.target?.trim();
 
-    if (!target) {
-        return res.status(400).json({ success: false, message: "Target username required" });
-    }
+    if (!target) return res.status(400).json({ success: false, message: "Target username required" });
 
-    // Step 1: Check emergency meeting status
-    db.get(`SELECT emergency_meeting FROM settings`, (err, row) => {
-        if (err) {
-            console.error("Error checking settings:", err);
-            return res.status(500).json({ success: false, message: "Error checking emergency status" });
-        }
+    // Ensure killer is imposter
+    db.get(`SELECT role FROM users WHERE username = ?`, [killer], (err, user) => {
+        if (err || !user) return res.status(500).json({ success: false, message: "Error fetching killer" });
+        if (user.role !== 'IMPOSTER') return res.status(403).json({ success: false, message: "Only imposters can remote kill" });
 
-        if (row && row.emergency_meeting) {
-            return res.status(403).json({ success: false, message: "Emergency meeting active, actions restricted!" });
-        }
+        // Ensure target is valid
+        db.get(`SELECT role FROM users WHERE username = ?`, [target], (err, victim) => {
+            if (err || !victim) return res.status(404).json({ success: false, message: "Target not found" });
+            if (victim.role !== 'CREWMATE') return res.status(400).json({ success: false, message: "Target must be a crewmate" });
 
-        // Step 2: Ensure the killer is an imposter
-        db.get(`SELECT role FROM users WHERE username = ?`, [killer], (err, user) => {
-            if (err || !user) {
-                console.error("Error fetching killer:", err);
-                return res.status(500).json({ success: false, message: "Error fetching killer" });
-            }
+            // Kill the victim
+            db.run(`UPDATE users SET role = 'DEAD' WHERE username = ?`, [target], (err) => {
+                if (err) return res.status(500).json({ success: false, message: "Error applying remote kill" });
 
-            if (user.role !== 'IMPOSTER') {
-                return res.status(403).json({ success: false, message: "Only imposters can remote kill" });
-            }
+                console.log(`${killer} remotely killed ${target}`);
 
-            // Step 3: Validate the target is a crewmate
-            db.get(`SELECT role FROM users WHERE username = ?`, [target], (err, victim) => {
-                if (err) {
-                    console.error("Error finding target:", err);
-                    return res.status(500).json({ success: false, message: "Error finding target" });
-                }
+                // Reassign victim's tasks with scaling
+                db.all(`SELECT task_id FROM player_tasks WHERE username = ? AND completed = 0`, [target], (err, tasks) => {
+                    if (err) return res.json({ success: true, message: `${target} has been remotely killed (task error)` });
 
-                if (!victim || victim.role !== 'CREWMATE') {
-                    return res.status(404).json({ success: false, message: "Target must be an existing CREWMATE" });
-                }
+                    const deadTasks = tasks.map(t => t.task_id);
 
-                // Step 4: Kill the crewmate
-                db.run(`UPDATE users SET role = 'DEAD' WHERE username = ?`, [target], (err) => {
-                    if (err) {
-                        console.error("Error updating victim role:", err);
-                        return res.status(500).json({ success: false, message: "Error applying remote kill" });
-                    }
+                    db.get(`SELECT COUNT(*) as total FROM users`, (err, row) => {
+                        if (err) return;
 
-                    console.log(`${killer} remotely killed ${target}.`);
-                    return res.json({ success: true, message: `${target} has been remotely killed.` });
+                        const totalPlayers = row.total;
+                        const scalingFactor = Math.max(2, Math.floor(totalPlayers / 10));
+
+                        db.all(`SELECT username FROM users WHERE role = 'CREWMATE'`, (err, survivors) => {
+                            if (err || survivors.length === 0) return;
+
+                            let survivorIndex = 0;
+                            deadTasks.forEach(taskId => {
+                                if (Math.random() < (1 / scalingFactor)) {
+                                    const assignedTo = survivors[survivorIndex % survivors.length].username;
+                                    db.run(`INSERT INTO player_tasks (username, task_id, completed) VALUES (?, ?, 0)`, [assignedTo, taskId]);
+                                    survivorIndex++;
+                                }
+                            });
+                        });
+                    });
                 });
+
+                return res.json({ success: true, message: `${target} has been remotely killed.` });
             });
         });
     });
 });
+
+
 
 
 // Get Dashboard Stats
@@ -624,9 +487,9 @@ app.get('/game-status', (req, res) => {
             //console.log("Crewmates Count:", crewmatesRow ? crewmatesRow.count : "undefined");
             //console.log("Imposters Count:", impostersRow ? impostersRow.count : "undefined");
 
-            res.json({ 
-                crewmates: crewmatesRow ? crewmatesRow.count : 0, 
-                imposters: impostersRow ? impostersRow.count : 0 
+            res.json({
+                crewmates: crewmatesRow ? crewmatesRow.count : 0,
+                imposters: impostersRow ? impostersRow.count : 0
             });
         });
     });
@@ -642,33 +505,17 @@ app.get('/check-admin', (req, res) => {
     }
 });
 
-
-/*
-app.post('/start-game', async (req, res) => {
-    try {
-        // Reset all players to "CREWMATE" except the admin
-        await db.run(`UPDATE users SET role = 'CREWMATE' WHERE username != 'admin'`);
-
-        // Send confirmation response
-        res.send("All players have been reset to Crewmates (except admin).");
-
-    } catch (error) {
-        console.error("Error resetting game:", error);
-        res.status(500).send("Failed to reset game.");
-    }
-});
-*/
 app.post('/start-game', (req, res) => {
     const numTasks = parseInt(req.body.numTasks) || 4; // default to 4 if missing or invalid
     // Step 1: Reset player roles
-    db.run(`UPDATE users SET role = 'CREWMATE' WHERE username != 'admin'`, function(err) {
+    db.run(`UPDATE users SET role = 'CREWMATE' WHERE username != 'admin'`, function (err) {
         if (err) {
             console.error("Error resetting roles:", err);
             return res.status(500).send("Failed to reset roles.");
         }
 
         // Step 2: Clear all old player tasks
-        db.run(`DELETE FROM player_tasks`, function(err) {
+        db.run(`DELETE FROM player_tasks`, function (err) {
             if (err) {
                 console.error("Error clearing old player tasks:", err);
                 return res.status(500).send("Failed to clear player tasks.");
@@ -732,8 +579,9 @@ app.post('/start-game', (req, res) => {
                                     res.send("Game started: All players reset, new tasks assigned, settings created.");
                                 });
                             }
-                    })});
-                
+                        })
+                    });
+
                 });
             });
         });
@@ -761,72 +609,6 @@ app.post('/startmeet', isemAdmin, (req, res) => {
 });
 
 // End Emergency Meeting (Admin Only)
-/*
-app.post('/endmeet', isemAdmin, async (req, res) => {
-       try {
-        const [players] = await db.run(`SELECT username FROM users WHERE role != 'DEAD'`);
-        const totalPlayers = players.map(p => p.name);
-        const totalVotesPossible = totalPlayers.length;
-
-        const [votes] = await db.run(`SELECT voter, vote_for FROM votes`);
-        const tally = {};
-        const votedPlayers = new Set();
-
-        for (let { voter, vote_for } of votes) {
-            votedPlayers.add(voter);
-            const vote = vote_for || 'SKIP';
-            tally[vote] = (tally[vote] || 0) + 1;
-        }
-
-        const missingVotes = totalPlayers.filter(p => !votedPlayers.has(p));
-        for (let missing of missingVotes) {
-            tally['SKIP'] = (tally['SKIP'] || 0) + 1;
-        }
-
-        let maxVotes = 0;
-        let ejectedPlayer = null;
-
-        for (let [name, count] of Object.entries(tally)) {
-            if (name !== 'SKIP' && count > maxVotes) {
-                maxVotes = count;
-                ejectedPlayer = name;
-            }
-        }
-
-        const skipCount = tally['SKIP'] || 0;
-
-        let resultMessage;
-        let ejectedRole = null;
-
-        if (!ejectedPlayer || skipCount >= maxVotes) {
-            resultMessage = 'No one was ejected. (Skipped)';
-        } else {
-            const [[{ role }]] = await db.run(`SELECT role FROM users WHERE username = ?`, [ejectedPlayer]);
-            ejectedRole = role;
-            await db.query(`UPDATE users SET role = 'DEAD' WHERE username = ?`, [ejectedPlayer]);
-            resultMessage = `${ejectedPlayer} was ejected. They were a ${role}.`;
-        }
-
-        await db.query(`DELETE FROM votes`);
-
-        res.json({
-            message: resultMessage,
-            ejected: ejectedPlayer,
-            role: ejectedRole // IMPOSTER or CREWMATE
-        });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Failed to end meeting' });
-    }
-
-    db.run(`UPDATE settings SET emergency_meeting = 0`, (err) => {
-        if (err) {
-            return res.status(500).json({ success: false, message: "Error ending meeting" });
-        }
-        res.json({ success: true, message: "Emergency meeting ended!" });
-    });
-});*/
 app.post('/endmeet', isemAdmin, (req, res) => {
     // Get alive player IDs
     db.all(`SELECT id FROM users WHERE role != 'DEAD'`, (err, players) => {
@@ -911,46 +693,6 @@ app.get('/statusmeet', (req, res) => {
     });
 });
 
-
-const getRandomTasks = async () => {
-    try {
-        const allTasks = await db.all("SELECT * FROM tasks");
-
-        // Shuffle using Fisher-Yates
-        for (let i = allTasks.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [allTasks[i], allTasks[j]] = [allTasks[j], allTasks[i]];
-        }
-
-        return allTasks.slice(0, 3);
-    } catch (error) {
-        console.error("Error fetching tasks:", error);
-        return [];
-    }
-};
-
-
-/*
-app.post('/request-hint', async (req, res) => {
-    const { username, taskId } = req.body;
-
-    try {
-        // Get the task from the task pool (replace with your actual task fetching logic)
-        const task = await db.get(`SELECT * FROM tasks WHERE id = ?`, [taskId]);
-
-        if (!task) {
-            return res.status(404).send("Task not found.");
-        }
-
-        // Return the hint for the task
-        res.json({ success: true, hint: task.hint });
-        //res.send({ hint: task.hint });
-    } catch (error) {
-        console.error("Error fetching hint:", error);
-        res.status(500).send("Failed to fetch hint.");
-    }
-});
-*/
 app.post('/request-hint', isAuthenticated, (req, res) => {
     const { taskId } = req.body;
 
@@ -979,7 +721,6 @@ app.post('/add-task', async (req, res) => {
     if (username !== 'admin') {
         return res.status(403).send("Only the admin can add tasks.");
     }
-
     try {
         await db.run(
             `INSERT INTO tasks (question, answer, hint) VALUES (?, ?, ?)`,
@@ -1071,243 +812,56 @@ app.post('/submit-task', isAuthenticated, (req, res) => {
     });
 });
 
-/*
 app.get('/check-win', async (req, res) => {
     try {
-        // Fetch counts of crewmates and imposters
         const crewmatesRow = await new Promise((resolve, reject) => {
             db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
+                if (err) reject(err); else resolve(row);
             });
         });
 
         const impostersRow = await new Promise((resolve, reject) => {
             db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'IMPOSTER'`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
+                if (err) reject(err); else resolve(row);
             });
         });
 
-        // Fetch total tasks and completed tasks
-        const totalTasksRow = await new Promise((resolve, reject) => {
+        const tasksRow = await new Promise((resolve, reject) => {
             db.get(`SELECT COUNT(*) as total FROM player_tasks`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
+                if (err) reject(err); else resolve(row);
             });
         });
 
-        const completedTasksRow = await new Promise((resolve, reject) => {
+        const completedRow = await new Promise((resolve, reject) => {
             db.get(`SELECT COUNT(*) as completed FROM player_tasks WHERE completed = 1`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
+                if (err) reject(err); else resolve(row);
             });
         });
 
         const crewmates = crewmatesRow.count;
         const imposters = impostersRow.count;
-        const totalTasks = totalTasksRow.total;
-        const completedTasks = completedTasksRow.completed;
+        const totalTasks = tasksRow.total;
+        const completedTasks = completedRow.completed;
 
-        // Check win conditions
-        if (crewmates < imposters) {
+        // --- Imposter win ---
+        if (crewmates <= imposters) {
             return res.json({ winner: 'IMPOSTERS' });
         }
 
-        if (completedTasks >= totalTasks * 0.75) {
+        // --- Crewmate win ---
+        // Fixed global threshold: at least 80% of total tasks must be done
+        const taskThreshold = Math.ceil(totalTasks * 0.8);
+
+        if (completedTasks >= taskThreshold) {
             return res.json({ winner: 'CREWMATES' });
         }
 
-        res.json({ winner: null }); // No winner yet
-    } catch (error) {
-        console.error("Error checking win conditions:", error);
-        res.status(500).json({ error: "Error checking win conditions" });
-    }
-});*/
-/*
-app.get('/check-win', async (req, res) => {
-    try {
-        // Fetch counts of crewmates and imposters
-        const crewmatesRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-
-        const impostersRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'IMPOSTER'`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-
-        // Fetch total and completed tasks
-        const totalTasksRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT COUNT(*) as total FROM player_tasks`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-
-        const completedTasksRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT COUNT(*) as completed FROM player_tasks WHERE completed = 1`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-
-        // Get alive players and total players
-        const alivePlayersRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-
-        const totalPlayersRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT COUNT(*) as count FROM users`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-
-        const crewmates = crewmatesRow.count;
-        const imposters = impostersRow.count;
-        const totalTasks = totalTasksRow.total;
-        const completedTasks = completedTasksRow.completed;
-        const alivePlayers = alivePlayersRow.count;
-        const totalPlayers = totalPlayersRow.count;
-
-        // WIN: Imposters outnumber crewmates
-        if (crewmates < imposters) {
-            return res.json({ winner: 'IMPOSTERS' });
-        }
-
-        // WIN: Task completion logic with alive % scaling
-        const alivePercent = alivePlayers / totalPlayers;
-        let taskThreshold = 0.75;
-
-        if (alivePercent <= 0.30) {
-            taskThreshold = 0.50;
-        }
-
-        if (completedTasks >= totalTasks * taskThreshold) {
-            return res.json({ winner: 'CREWMATES' });
-        }
-
-        res.json({ winner: null }); // No winner yet
-    } catch (error) {
-        console.error("Error checking win conditions:", error);
-        res.status(500).json({ error: "Error checking win conditions" });
-    }
-});
-*/
-app.get('/check-win', async (req, res) => {
-    try {
-        // Count current CREWMATES and IMPOSTERS
-        const crewmatesRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-
-        const impostersRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'IMPOSTER'`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-
-        // Get total & completed tasks
-        const totalTasksRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT COUNT(*) as total FROM player_tasks`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-
-        const completedTasksRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT COUNT(*) as completed FROM player_tasks WHERE completed = 1`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-
-        // Get alive and total player counts
-        const alivePlayersRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-
-        const totalPlayersRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT COUNT(*) as count FROM users`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-
-        // Extract data
-        const crewmates = crewmatesRow.count;
-        const imposters = impostersRow.count;
-        const totalTasks = totalTasksRow.total;
-        const completedTasks = completedTasksRow.completed;
-        const alivePlayers = alivePlayersRow.count;
-        const totalPlayers = totalPlayersRow.count;
-
-        // --- Imposter win check ---
-        if (crewmates < imposters) {
-            return res.json({ winner: 'IMPOSTERS' });
-        }
-
-        // --- Scalable task win check ---
-         // Fetch tasks_per_player setting from settings table
-        const settingsRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT tasks_per_player FROM settings ORDER BY id DESC LIMIT 1`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-
-        // Default fallback if not set
-        const baseTasksPerPlayer = settingsRow && settingsRow.tasks_per_player ? settingsRow.tasks_per_player : 10;
-
-
-        const alivePercent = alivePlayers / totalPlayers;
-
-        // Base requirement scales with alive players
-        let taskTarget = baseTasksPerPlayer * alivePlayers;
-
-        // Apply difficulty scaling (makes it slightly harder when more are alive)
-        const difficultyModifier = 1 + ((1 - alivePercent) * 0.5); // max 1.5x
-        taskTarget = taskTarget * difficultyModifier;
-
-        // Apply minimum and maximum caps
-        // Ensure at least 70% of total tasks are required 
-        const minRequired = totalTasks * 0.7; // 70% minimum cap
-        taskTarget = Math.max(minRequired, taskTarget);
-        // Cap task requirement to 90% of all tasks
-        const hardCap = totalTasks * 0.9;
-        taskTarget = Math.min(taskTarget, hardCap);
-
-        // Final task win check
-        if (completedTasks >= taskTarget) {
-            return res.json({ winner: 'CREWMATES' });
-        }
-
-        // No winner yet
         res.json({ winner: null });
-
     } catch (error) {
         console.error("Error checking win conditions:", error);
         res.status(500).json({ error: "Error checking win conditions" });
     }
 });
-
-
 
 
 app.get('/check-dead', isAuthenticated, (req, res) => {
@@ -1374,40 +928,7 @@ app.post('/convert-crewmates', isemAdmin, async (req, res) => {
         res.status(500).json({ success: false, message: "Error converting crewmates." });
     }
 });
-/*
-app.get('/task-progress', isAuthenticated, async (req, res) => {
-    try {
-        // Fetch total tasks and completed tasks
-        const totalTasksRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT COUNT(*) as total FROM player_tasks`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
 
-        const completedTasksRow = await new Promise((resolve, reject) => {
-            db.get(`SELECT COUNT(*) as completed FROM player_tasks WHERE completed = 1`, (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-
-        const totalTasks = totalTasksRow.total || 0;
-        const completedTasks = completedTasksRow.completed || 0;
-
-        // Calculate the percentage of tasks completed
-        const percentageCompleted = totalTasks > 0 ? ((completedTasks )/ (totalTasks*0.75)) * 100 : 0;
-
-        res.json({
-            totalTasks,
-            completedTasks,
-            percentageCompleted: percentageCompleted.toFixed(2), // Round to 2 decimal places
-        });
-    } catch (error) {
-        console.error("Error fetching task progress:", error);
-        res.status(500).json({ error: "Error fetching task progress" });
-    }
-});*/
 app.get('/task-progress', isAuthenticated, async (req, res) => {
     try {
         // Fetch tasks_per_player from settings (latest row)
@@ -1486,24 +1007,24 @@ app.get('/task-progress', isAuthenticated, async (req, res) => {
 
 
 app.get('/players', (req, res) => {
-  db.all(`SELECT id, username FROM users WHERE role != 'DEAD' ORDER BY username ASC`, (err, rows) => {
-    if (err) return res.status(500).json({ error: "Failed to fetch players" });
-    res.json({ players: rows });
-  });
+    db.all(`SELECT id, username FROM users WHERE role != 'DEAD' ORDER BY username ASC`, (err, rows) => {
+        if (err) return res.status(500).json({ error: "Failed to fetch players" });
+        res.json({ players: rows });
+    });
 });
 
 app.post('/vote', (req, res) => {
-  const voterId = parseInt(req.session.userId); // or however you're storing user ID
-  const voteForId = parseInt(req.body.vote_for) ?? null;
+    const voterId = parseInt(req.session.userId); // or however you're storing user ID
+    const voteForId = parseInt(req.body.vote_for) ?? null;
 
-  if (!voterId) return res.status(403).json({ error: "Not authenticated" });
+    if (!voterId) return res.status(403).json({ error: "Not authenticated" });
 
-  db.run(`DELETE FROM votes WHERE voter = ?`, [voterId], () => {
-    db.run(`INSERT INTO votes (voter, vote_for) VALUES (?, ?)`, [voterId, voteForId], (err) => {
-      if (err) return res.status(500).json({ error: "Failed to record vote" });
-      res.json({ message: "Vote submitted successfully" });
+    db.run(`DELETE FROM votes WHERE voter = ?`, [voterId], () => {
+        db.run(`INSERT INTO votes (voter, vote_for) VALUES (?, ?)`, [voterId, voteForId], (err) => {
+            if (err) return res.status(500).json({ error: "Failed to record vote" });
+            res.json({ message: "Vote submitted successfully" });
+        });
     });
-  });
 });
 
 
