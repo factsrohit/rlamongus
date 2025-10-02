@@ -377,6 +377,7 @@ app.get('/all-imposters', isAuthenticated, async (req, res) => {
     }
 });
 //kill route
+/*
 app.post('/kill', isAuthenticated, (req, res) => {
     const username = req.session.username;
     const now = Math.floor(Date.now() / 1000);
@@ -496,7 +497,136 @@ app.post('/kill', isAuthenticated, (req, res) => {
             });
         });
     });
+});*/
+app.post('/kill', isAuthenticated, async (req, res) => {
+    const username = req.session.username;
+    const now = Math.floor(Date.now() / 1000);
+
+    try {
+        // 1. Check if emergency meeting is active
+        const settings = await db.getAsync(`SELECT emergency_meeting FROM settings`);
+        if (settings && settings.emergency_meeting) {
+            return res.status(403).json({
+                success: false,
+                message: "Emergency meeting active, actions restricted!"
+            });
+        }
+
+        // 2. Verify killer
+        const user = await db.getAsync(
+            `SELECT role, last_kill_time FROM users WHERE username = ?`,
+            [username]
+        );
+        if (!user) {
+            return res.status(500).json({ success: false, message: "Error fetching user" });
+        }
+
+        if (user.role !== "IMPOSTER") {
+            return res.status(403).json({ success: false, message: "Only imposters can kill" });
+        }
+
+        if (user.last_kill_time && now - user.last_kill_time < COOLDOWN_TIME) {
+            return res.status(403).json({ success: false, message: "Kill on cooldown" });
+        }
+
+        // 3. Get imposter location
+        const imposter = await db.getAsync(
+            `SELECT latitude, longitude FROM locations WHERE username = ?`,
+            [username]
+        );
+        if (!imposter) {
+            return res.status(500).json({ success: false, message: "Error fetching location" });
+        }
+
+        // 4. Find nearest crewmate in range
+        const victim = await db.getAsync(
+            `
+            SELECT users.username, latitude, longitude,
+            (6371 * acos(
+                cos(radians(?)) * cos(radians(latitude)) *
+                cos(radians(longitude) - radians(?)) +
+                sin(radians(?)) * sin(radians(latitude))
+            )) AS distance
+            FROM locations 
+            JOIN users ON locations.username = users.username
+            WHERE users.role = "CREWMATE"
+            AND (6371 * acos(
+                cos(radians(?)) * cos(radians(latitude)) *
+                cos(radians(longitude) - radians(?)) +
+                sin(radians(?)) * sin(radians(latitude))
+            )) <= ?
+            ORDER BY distance ASC LIMIT 1
+            `,
+            [
+                imposter.latitude, imposter.longitude, imposter.latitude,
+                imposter.latitude, imposter.longitude, imposter.latitude,
+                KILL_RANGE
+            ]
+        );
+
+        if (!victim) {
+            return res.status(404).json({ success: false, message: "No crewmates in range" });
+        }
+
+        // 5. Mark victim as DEAD
+        await db.runAsync(`UPDATE users SET role = 'DEAD' WHERE username = ?`, [victim.username]);
+
+        // 6. Get victim’s unfinished tasks
+        const tasks = await db.allAsync(
+            `SELECT task_id FROM player_tasks WHERE username = ? AND completed = 0`,
+            [victim.username]
+        );
+
+        if (tasks.length > 0) {
+            const aliveCrewmates = await db.allAsync(`
+                SELECT u.username, COUNT(pt.task_id) AS task_count
+                FROM users u
+                LEFT JOIN player_tasks pt ON u.username = pt.username AND pt.completed = 0
+                WHERE u.role = 'CREWMATE'
+                GROUP BY u.username
+                ORDER BY task_count ASC
+            `);
+
+            if (aliveCrewmates.length > 0) {
+                let i = 0;
+                for (const task of tasks) {
+                    const player = aliveCrewmates[i % aliveCrewmates.length];
+                    await db.runAsync(
+                        `INSERT INTO player_tasks (username, task_id, completed) VALUES (?, ?, 0)`,
+                        [player.username, task.task_id]
+                    );
+                    i++;
+                }
+
+                // Remove victim’s unfinished tasks
+                await db.runAsync(
+                    `DELETE FROM player_tasks WHERE username = ? AND completed = 0`,
+                    [victim.username]
+                );
+            }
+        }
+
+        // 7. Update killer cooldown
+        await db.runAsync(
+            `UPDATE users SET last_kill_time = ? WHERE username = ?`,
+            [now, username]
+        );
+
+        console.log(`${username} killed ${victim.username}. Tasks reallocated fairly.`);
+        res.json({
+            success: true,
+            message: `${victim.username} is now DEAD. Their tasks were fairly reassigned.`
+        });
+
+    } catch (err) {
+        console.error("Kill route error:", err);
+        res.status(500).json({
+            success: false,
+            message: "Server error during kill action"
+        });
+    }
 });
+
 
 
 // Remote Kill route
