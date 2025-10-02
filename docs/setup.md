@@ -51,7 +51,7 @@ rlamongus/
 ### Clone the Repository
 
 ```sh
-git clone <your-repo-url>
+gh repo clone factsrohit/rlamongus
 cd rlamongus
 ```
 
