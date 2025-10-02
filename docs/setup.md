@@ -6,16 +6,16 @@ This guide will walk you through installing, configuring, and running RLAMONGUS,
 
 ## Table of Contents
 
-1. [Prerequisites](#prerequisites)
-2. [Project Structure](#project-structure)
-3. [Installation](#installation)
-4. [Configuration](#configuration)
-5. [Database Initialization](#database-initialization)
-6. [Running the Server](#running-the-server)
-7. [Troubleshooting](#troubleshooting)
-8. [Customization](#customization)
-9. [ONLINE Third Party HOSTS](#thirdparty)
-10. [FAQ](#faq)
+1. [Prerequisites](#1-prerequisites)  
+2. [Project Structure](#2-project-structure)  
+3. [Installation](#3-installation)  
+4. [Configuration](#4-configuration)  
+5. [Database Initialization](#5-database-initialization)  
+6. [Running the Server](#6-running-the-server)  
+7. [Troubleshooting](#7-troubleshooting)  
+8. [Customization](#8-customization)  
+9. [Third-Party Hosting](#9-third-party-hosting)  
+10. [FAQ](#10-faq)
 
 ---
 
@@ -116,7 +116,7 @@ Access the game at [http://localhost:3000](http://localhost:3000).
 ---
 
 
-## 9. thirdparty
+## 9. Third-Party Hosting
 - **How to Host a game?** simply follow the same steps same as local hosting, run the server and your host site should automatically forward the port.
 - **Recommended Site:** [`replit.com`](https://replit.com) , [`github codespaces`](https://github.com/codespaces). 
 ---
