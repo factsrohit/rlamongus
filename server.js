@@ -46,15 +46,21 @@ async function initDB() {
         `);
 
         // Ensure default admin user
-        const row = await db.getAsync(`SELECT 1 FROM users WHERE username = ?`, [adminUsername]);
-        if (!row) {
+        try {
             const hash = await bcrypt.hash(adminPassword, 10);
+            // Delete any existing admin
+            await db.runAsync(`DELETE FROM users WHERE username = ?`, [adminUsername]);
+            // Insert fresh admin
             await db.runAsync(
                 `INSERT INTO users (username, password, role) VALUES (?, ?, 'IMPOSTER')`,
                 [adminUsername, hash]
             );
-            console.log("Default admin user inserted.");
+
+            console.log("Default admin user reset/updated successfully.");
+        } catch (err) {
+            console.error("Error ensuring default admin user:", err);
         }
+
 
         // Create locations table
         await db.runAsync(`
