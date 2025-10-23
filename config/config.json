@@ -1,0 +1,8 @@
+{
+    "port": 3000,
+    "adminUsername": "admin",
+    "adminPassword": "admin",
+    "sessionSecret": "your-secret-key",
+    "cooldownTime": 30,
+    "killRange": 7
+}

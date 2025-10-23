@@ -179,3 +179,93 @@ button:hover {
         padding: 10px;
     }
 }
+
+
+
+#leaderboardList {
+    list-style: none;
+    padding: 6px;
+    margin: 0;
+    display: block;
+}
+
+/* Each leaderboard row */
+.lb-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    background: transparent;
+    transition: background 180ms ease, transform 180ms ease;
+    color: #fff;
+}
+
+/* Highlight the current user */
+.lb-item.me {
+    background: linear-gradient(90deg, rgba(255,215,0,0.06), rgba(255,255,255,0.02));
+    border-left: 4px solid #ffd700;
+}
+
+/* Rank box / medal */
+.lb-rank {
+    min-width: 44px;
+    text-align: center;
+    font-weight: 700;
+    color: #fff;
+    font-size: 14px;
+}
+
+/* Avatar circle */
+.lb-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    flex: 0 0 auto;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+/* Info column */
+.lb-info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Name and score row */
+.lb-name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+.lb-name { font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-score { color: #ffd27a; font-weight: 700; }
+
+/* Progress bar */
+.lb-bar-wrap {
+    margin-top: 6px;
+    height: 8px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 6px;
+    overflow: hidden;
+}
+.lb-bar {
+    height: 100%;
+    background: linear-gradient(90deg,#4ae7a8,#2eb67d);
+    transition: width 600ms cubic-bezier(.2,.9,.2,1);
+}
+
+/* Fade-in animation for rows */
+@keyframes lbFadeIn {
+    from { transform: translateY(6px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+}
+.fade-in { animation: lbFadeIn 360ms ease forwards; }
+
+
+

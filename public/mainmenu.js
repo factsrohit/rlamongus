@@ -185,7 +185,52 @@ function startRemoteKillCooldown() {
     }, 1000);
 }
 
+function backstab() {
+    const target = prompt("Enter the exact username of the crewmate to kill:");
 
+    if (!target) {
+        alert("Kill cancelled. No target provided.");
+        return;
+    }
+
+    fetch('/kill-remote', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ target })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) {
+            startBackStabKillCooldown(); // cooldown for backstabkills
+        }
+    })
+    .catch(err => {
+        console.error("Kill failed:", err);
+        alert("Remote kill failed.");
+    });
+}
+function startBackStabKillCooldown() {
+    let timeLeft = 180; // 3 minutes in seconds
+    const cooldown = document.getElementById("backstabCooldown");
+    const btn = document.getElementById("backstabKillBtn");
+
+    btn.disabled = true;
+    const interval = setInterval(() => {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        cooldown.textContent = `BackStab available in: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        timeLeft--;
+
+        if (timeLeft < 0) {
+            clearInterval(interval);
+            cooldown.textContent = "";
+            btn.disabled = false;
+        }
+    }, 1000);
+}
 
 
 // Fetch game status and show "Start Game" button for admin
@@ -273,9 +318,9 @@ async function checkEmergencyStatus() {
         const winnerOverlay = document.getElementById('winnerOverlay');
         // Show overlay only if emergency meeting is active AND user is NOT admin
         if (meetingData.emergency_meeting && !adminData.isAdmin && deadOverlay.style.display === "none" && winnerOverlay.style.display === "none") {
-            overlay.style.display = "block";
+            showOverlay('emergencyOverlay');
         } else {
-            overlay.style.display = "none";
+            hideOverlay('emergencyOverlay');
         }
     } catch (error) {
         console.error("Error checking emergency status:", error);
@@ -444,14 +489,18 @@ async function checkWinner() {
             const overlay = document.getElementById('winnerOverlay');
             const winnerMessage = document.getElementById('winnerMessage');
             winnerMessage.textContent = `🎉 Winner: ${data.winner}`;
-            overlay.style.display = "block";
+            showWinnerOverlay();
             if(adminData.isAdmin){
                 const restartButton = document.getElementById('newgamebtn');
                 restartButton.style.display = "block";
             }
+            // populate leaderboard whenever overlay is shown
+            showLeaderboard();
         }else{
             const overlay = document.getElementById('winnerOverlay');
-            overlay.style.display = "none"; 
+            hideWinnerOverlay();
+            const ul = document.getElementById('leaderboardList');
+            if (ul) ul.innerHTML = '';
         }
     } catch (error) {
         console.error("Error checking winner:", error);
@@ -469,9 +518,9 @@ async function checkDeadStatus() {
         const winnerOverlay = document.getElementById('winnerOverlay');
 
         if (data.isDead && winnerOverlay.style.display === "none") {
-            deadOverlay.style.display = "block";
+            showOverlay('deadOverlay');
         } else {
-            deadOverlay.style.display = "none";
+            hideOverlay('deadOverlay');
         }
     } catch (error) {
         console.error("Error checking dead status:", error);
@@ -560,6 +609,217 @@ async function castVote(playerId) {
 }
 
 
+clearScores = () => {
+    if (confirm("Are you sure you want to clear scores of all players?")) {
+        fetch('/clear-scores', { method: 'POST' })
+            .then(response => response.text())
+            .then(data => alert(data))
+            .catch(error => console.error("Error clearing scores:", error));
+    }
+};
+
+// Fetch and display current user's score
+function fetchMyScore() {
+    fetch('/my-score')
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.success) {
+                const score = (typeof data.score === 'number') ? data.score : Number(data.score || 0);
+                const el = document.getElementById('playerScore');
+                if (el) el.textContent = `🏆 Current Score: ${score}`;
+            } else {
+                const el = document.getElementById('playerScore');
+                if (el) el.textContent = '🏆 Current Score: N/A';
+            }
+        })
+        .catch(err => {
+            console.error('Error fetching my score:', err);
+            const el = document.getElementById('playerScore');
+            if (el) el.textContent = '🏆 Current Score: Error';
+        });
+}
+
+// Fetch and render leaderboard into the winner overlay
+/*async function showLeaderboard() {
+    try {
+        const res = await fetch('/leaderboard-rankings');
+        const data = await res.json();
+        const ul = document.getElementById('leaderboardList');
+        if (!ul) return;
+
+        ul.innerHTML = ''; // clear previous
+
+        if (!data || !data.success || !Array.isArray(data.leaderboard)) {
+            const li = document.createElement('li');
+            li.textContent = 'Failed to load leaderboard.';
+            ul.appendChild(li);
+            return;
+        }
+
+        data.leaderboard.forEach(item => {
+            const li = document.createElement('li');
+            li.style.padding = '6px 8px';
+            li.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
+            li.textContent = `#${item.rank} ${item.username} — ${item.score}`;
+            ul.appendChild(li);
+        });
+    } catch (err) {
+        console.error('Error loading leaderboard:', err);
+        const ul = document.getElementById('leaderboardList');
+        if (ul) {
+            ul.innerHTML = '<li>Unable to load leaderboard.</li>';
+        }
+    }
+}*/
+
+async function showLeaderboard() {
+    try {
+        const [resBoard, resMe] = await Promise.all([
+            fetch('/leaderboard-rankings'),
+            fetch('/my-score')
+        ]);
+        const boardData = await resBoard.json();
+        const meData = await resMe.json();
+        const me = meData?.username || null;
+
+        const ul = document.getElementById('leaderboardList');
+        if (!ul) return;
+        ul.innerHTML = '';
+
+        if (!boardData || !boardData.success || !Array.isArray(boardData.leaderboard)) {
+            const li = document.createElement('li');
+            li.className = 'lb-item';
+            li.textContent = 'Failed to load leaderboard.';
+            ul.appendChild(li);
+            return;
+        }
+
+        const rows = boardData.leaderboard;
+        const topScore = rows.length ? Math.max(...rows.map(r => Number(r.score || 0))) : 0;
+
+        const colorFor = (name) => {
+            let h = 0;
+            for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
+            return `hsl(${h}, 70%, 45%)`;
+        };
+
+        rows.forEach((item, idx) => {
+            const li = document.createElement('li');
+            li.className = 'lb-item fade-in';
+            if (item.username === me) li.classList.add('me');
+
+            // rank / medal
+            const rankBox = document.createElement('div');
+            rankBox.className = 'lb-rank';
+            const rank = Number(item.rank || (idx + 1));
+            rankBox.textContent = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+
+            // avatar
+            const avatar = document.createElement('div');
+            avatar.className = 'lb-avatar';
+            avatar.textContent = (item.username || '?')[0].toUpperCase();
+            avatar.style.background = colorFor(item.username);
+
+            // info (name + score + progress)
+            const info = document.createElement('div');
+            info.className = 'lb-info';
+
+            const nameRow = document.createElement('div');
+            nameRow.className = 'lb-name-row';
+
+            const nameEl = document.createElement('div');
+            nameEl.className = 'lb-name';
+            nameEl.textContent = item.username;
+
+            const scoreEl = document.createElement('div');
+            scoreEl.className = 'lb-score';
+            scoreEl.textContent = `${item.score}`;
+
+            nameRow.appendChild(nameEl);
+            nameRow.appendChild(scoreEl);
+
+            const barWrap = document.createElement('div');
+            barWrap.className = 'lb-bar-wrap';
+            const bar = document.createElement('div');
+            bar.className = 'lb-bar';
+            const pct = topScore > 0 ? Math.round((Number(item.score || 0) / topScore) * 100) : 0;
+            bar.style.width = `${pct}%`;
+            barWrap.appendChild(bar);
+
+            info.appendChild(nameRow);
+            info.appendChild(barWrap);
+
+            li.appendChild(rankBox);
+            li.appendChild(avatar);
+            li.appendChild(info);
+
+            ul.appendChild(li);
+
+            // staggered animation
+            li.style.animationDelay = `${Math.min(idx * 40, 400)}ms`;
+        });
+    } catch (err) {
+        console.error('Error loading leaderboard:', err);
+        const ul = document.getElementById('leaderboardList');
+        if (ul) ul.innerHTML = '<li class="lb-item">Unable to load leaderboard.</li>';
+    }
+}
+
+
+// Overlay helpers: call showOverlay('winnerOverlay') / hideOverlay('winnerOverlay')
+function _updateBodyOverlayState() {
+    // If any overlay is visible, add class to body to lock background scrolling
+    const overlays = document.querySelectorAll('.overlay');
+    const anyVisible = Array.from(overlays).some(o => o.style.display === 'block' || o.style.display === 'flex');
+    if (anyVisible) document.body.classList.add('overlay-open');
+    else document.body.classList.remove('overlay-open');
+}
+
+function showOverlay(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // For overlay containers use flex so content centers correctly
+    if (el.classList.contains('overlay')) el.style.display = 'block';
+    else el.style.display = 'block';
+    // ensure body is locked
+    _updateBodyOverlayState();
+}
+
+function hideOverlay(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = 'none';
+    _updateBodyOverlayState();
+}
+
+// Example: replace direct overlay toggles with showOverlay/hideOverlay
+// Previously: overlay.style.display = "block";  -> now: showOverlay('winnerOverlay');
+// Previously: overlay.style.display = "none";   -> now: hideOverlay('winnerOverlay');
+
+// Small convenience wrappers used in the codebase
+function showWinnerOverlay(message, showRestartButton) {
+    const winMsg = document.getElementById('winnerMessage');
+    const restartBtn = document.getElementById('newgamebtn');
+    if (winMsg) winMsg.textContent = message || winMsg.textContent;
+    if (restartBtn) restartBtn.style.display = showRestartButton ? 'block' : 'none';
+    showOverlay('winnerOverlay');
+    // populate leaderboard now that overlay is visible
+    if (typeof showLeaderboard === 'function') showLeaderboard();
+}
+
+function hideWinnerOverlay() {
+    hideOverlay('winnerOverlay');
+    const ul = document.getElementById('leaderboardList');
+    if (ul) ul.innerHTML = '';
+}
+
+// If you have other places directly toggling overlays, switch them to these helpers.
+// Example integration in checkWinner (replace your overlay.style assignments):
+// if (data.winner) showWinnerOverlay(`🎉 Winner: ${data.winner}`, adminData.isAdmin);
+// else hideWinnerOverlay();
+
+
+
 // Get location on page load
 window.onload = () => {
     checkAdmin();
@@ -578,5 +838,9 @@ window.onload = () => {
     // Add a new interval to periodically fetch task progress
     setInterval(fetchTaskProgress, 5000);
     setInterval(updateImposters, 5000); // refresh imposters list every 5 seconds
+
+    // Fetch and refresh player's score immediately and then every 5 seconds
+    fetchMyScore();
+    setInterval(fetchMyScore, 5000);
 
 };

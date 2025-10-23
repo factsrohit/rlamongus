@@ -29,15 +29,19 @@
         
         <p id="gameStatus">Loading game status...</p>
         <p id="playerRole">🕵️‍♂️ Role: Loading...</p>
+        <p id="playerScore">🏆 Current Score: Loading...</p>
         <div id="tasks" class ="info-box">
             <h3>Your Tasks</h3>
             <ul id="taskList"></ul>
         </div>
+
         <div id = "imposterstuff" class = "container" style = "display: none" >
         <button class="kill" id="killBtn" onclick="kill()">💀 Kill</button>
         <p id="cooldown"></p>
         <button class="kill" id="remoteKillBtn" onclick="killRemote()"> Snipe </button>
         <p id="remoteCooldown"></p>
+        <button class="kill" id="backstabKillBtn" onclick="backstab()"> BackStab </button>
+        <p id="backstabCooldown"></p>
         
         <div id="impostersList" style="margin-top: 10px; font-weight: bold;">Other Imposters: Loading...</div>
         </div>
@@ -54,6 +58,7 @@
         <button class="alert" id="emergencystart"   onclick="startMeeting()">🚨 Start Emergency Meeting</button>
         <button class="alert" id="emergencyend" onclick="endMeeting()">✅ End Emergency Meeting</button>
         <button class="alert" id="convertCrewmatesBtn" onclick="convertCrewmates()">🔄 Convert Crewmates to Imposters</button>
+        <button class="alert" id="scorereset" onclick="clearScores()">✅ Clear Scores of All Players</button>
         <button class="alert" id="clearusers"  onclick="clearUsers()">⚠️ Clear All Users (Except Admin)</button>
         <div class="info-box">
         <form id="add-task-form" >
@@ -100,6 +105,13 @@
         <h2 id="winnerMessage">🎉 Winner: </h2>
         <button class="neon" id="newgamebtn" onclick="startGame()" style="display: none;" >ReStart Game</button>
         <p>The game has ended. Please wait for the admin to restart the game.</p>
+        <div style="max-height: 300px; overflow-y: auto; margin-top: 20px;">
+            <h3 style="margin: 6px 12px;">Leaderboard</h3>
+            <ul id="leaderboardList" style="list-style: none; padding: 8px 12px; margin: 0;">
+                <!-- leaderboard items injected here by mainmenu.js -->
+            </ul>
+        </div>
+
     </div>
     <div id="deadOverlay" class="overlay" style="display: none;">
         <h2>💀 You Are Dead 💀</h2>

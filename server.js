@@ -8,11 +8,14 @@ const path = require('path');
 const { promisify } = require('util');
 
 const app = express();
-const port = 3000;
-const COOLDOWN_TIME = 30; // Cooldown time in seconds
-const KILL_RANGE = 7; // Kill range in meters
-const adminUsername = 'admin';
-const adminPassword = 'admin';
+
+const config = require('./config/config.json');
+const port = config.port || 3000;
+const adminUsername = config.adminUsername || 'admin';
+const adminPassword = config.adminPassword || 'admin';
+const COOLDOWN_TIME = config.cooldownTime || 30; // seconds
+const KILL_RANGE = config.killRange || 7; // meters
+let winnerAwarded = false;
 
 // Set up database
 const db = new sqlite3.Database('db.sqlite', (err) => {
@@ -41,7 +44,8 @@ async function initDB() {
                 username TEXT NOT NULL,
                 password TEXT NOT NULL,
                 role TEXT DEFAULT 'CREWMATE',
-                last_kill_time INTEGER DEFAULT 0
+                last_kill_time INTEGER DEFAULT 0,
+                score INTEGER DEFAULT 0
             );
         `);
 
@@ -173,7 +177,7 @@ async function clearLocationData() {
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
-    secret: 'your-secret-key',
+    secret: config.sessionSecret ||'your-secret-key',
     resave: false,
     saveUninitialized: true
 }));
@@ -191,7 +195,7 @@ function isAuthenticated(req, res, next) {
 }
 
 function isemAdmin(req, res, next) {
-    if (req.session.username === 'admin') {
+    if (req.session.username === adminUsername) {
         next();
     } else {
         res.status(403).json({ success: false, message: "Unauthorized" });
@@ -205,30 +209,51 @@ app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
 
 // Register route
 app.post('/register', async (req, res) => {
-    const { username, password } = req.body;
-
     try {
-        // Hash password (bcrypt has promise support)
+        let { username, password } = req.body;
+        username = String(username || '').trim();
+        password = String(password || '');
+
+        // Basic validation
+        if (!username || !password) {
+            return res.render('error', { message: "Username and password are required." });
+        }
+        if (username.length < 3 || username.length > 32) {
+            return res.render('error', { message: "Username must be between 3 and 32 characters." });
+        }
+        if (password.length < 6) {
+            return res.render('error', { message: "Password must be at least 6 characters." });
+        }
+        // Prevent registering as admin
+        if (username === adminUsername) {
+            return res.render('error', { message: "This username is reserved." });
+        }
+
+        // Check if user already exists
+        const existing = await db.getAsync(`SELECT id FROM users WHERE username = ?`, [username]);
+        if (existing) {
+            return res.render('error', { message: "User already exists. Please choose another username." });
+        }
+
+        // Hash password
         const hash = await bcrypt.hash(password, 10);
 
         // Insert into DB
         await db.runAsync(
-            "INSERT INTO users (username, password, role) VALUES (?, ?, 'CREWMATE')",
+            `INSERT INTO users (username, password, role) VALUES (?, ?, 'DEAD')`,
             [username, hash]
         );
 
+        // Retrieve new user's id
+        const newUser = await db.getAsync(`SELECT id FROM users WHERE username = ?`, [username]);
+
         // Set session and redirect
         req.session.username = username;
-        res.redirect('/dashboard.html');
+        if (newUser && newUser.id) req.session.userId = newUser.id;
 
+        res.redirect('/dashboard.html');
     } catch (err) {
         console.error("Error registering user:", err);
-
-        // Handle unique constraint violation (username already exists)
-        if (err.message.includes("UNIQUE") || err.message.includes("constraint")) {
-            return res.render('error', { message: "User already exists. Please choose another username." });
-        }
-
         res.render('error', { message: "Error registering user. Please try again." });
     }
 });
@@ -274,11 +299,11 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
 
 // Clear all users except admin
 app.post('/clear-users', async (req, res) => {
-    if (req.session.username !== 'admin') return res.status(403).send("Access Denied");
+    if (req.session.username !== adminUsername) return res.status(403).send("Access Denied");
 
     try {
-        await db.runAsync(`DELETE FROM users WHERE username != 'admin'`);
-        await db.runAsync(`DELETE FROM locations WHERE username != 'admin'`);
+        await db.runAsync(`DELETE FROM users WHERE username != ?`, [adminUsername]);
+        await db.runAsync(`DELETE FROM locations WHERE username != ?`, [adminUsername]);
         res.send("All users (except admin) have been deleted");
     } catch (err) {
         console.error("Error clearing users:", err);
@@ -576,7 +601,7 @@ app.post('/kill', isAuthenticated, async (req, res) => {
 
         // 5. Mark victim as DEAD
         await db.runAsync(`UPDATE users SET role = 'DEAD' WHERE username = ?`, [victim.username]);
-
+        increaseScore(username, 2); // Increase killer's score by 2;
         // 6. Get victim’s unfinished tasks
         const tasks = await db.allAsync(
             `SELECT task_id FROM player_tasks WHERE username = ? AND completed = 0`,
@@ -692,7 +717,7 @@ WHERE task_id IN (
 )
 AND username = ?`, [target, deadTasks.length - alloted, target]
         );
-
+        increaseScore(killer, 2); // Increase killer's score by 2;
         res.json({ success: true, message: `${target} has been remotely killed.` });
     } catch (err) {
         console.error("Remote kill error:", err);
@@ -748,7 +773,7 @@ app.get('/game-status', async (req, res) => {
 
 // Check if Admin
 app.get('/check-admin', (req, res) => {
-    res.json({ isAdmin: req.session.username === 'admin' });
+    res.json({ isAdmin: req.session.username === adminUsername });
 });
 // Start Game
 app.post('/start-game', async (req, res) => {
@@ -756,13 +781,13 @@ app.post('/start-game', async (req, res) => {
         const numTasks = parseInt(req.body.numTasks) || 4; // default 4
 
         // Step 1: Reset roles
-        await db.runP(`UPDATE users SET role = 'CREWMATE' WHERE username != 'admin'`);
+        await db.runP(`UPDATE users SET role = 'CREWMATE' WHERE username != ?`, [adminUsername]);
 
         // Step 2: Clear old tasks
         await db.runP(`DELETE FROM player_tasks`);
 
         // Step 3: Get all players (excluding admin)
-        const players = await db.allP(`SELECT username FROM users WHERE username != 'admin'`);
+        const players = await db.allP(`SELECT username FROM users WHERE username != ?`, [adminUsername]);
 
         // Step 4: Get all available tasks
         const allTasks = await db.allP(`SELECT id FROM tasks`);
@@ -790,6 +815,9 @@ app.post('/start-game', async (req, res) => {
         } else {
             await db.runP(`INSERT INTO settings (tasks_per_player) VALUES (?)`, [numTasks]);
         }
+
+        // Reset winner award flag for the new game
+        winnerAwarded = false;
 
         res.send("Game started: All players reset, new tasks assigned, settings updated.");
     } catch (err) {
@@ -992,6 +1020,7 @@ app.post('/submit-task', isAuthenticated, async (req, res) => {
 
         if (task.answer.toLowerCase() === answer.toLowerCase()) {
             await db.runP(`UPDATE player_tasks SET completed = 1 WHERE username = ? AND task_id = ?`, [username, taskId]);
+            increaseScore(username, 1); // Increase score by 1 for completing a task
             return res.json({ success: true, message: "Task completed successfully!" });
         } else {
             return res.json({ success: false, message: "Incorrect answer. Try again!" });
@@ -1014,11 +1043,30 @@ app.get('/check-win', async (req, res) => {
         const imposters = impostersRow.count;
         const totalTasks = tasksRow.total;
         const completedTasks = completedRow.completed;
+        // Determine winner without returning early
+        let winner = null;
+        if (crewmates <= imposters) {
+            winner = 'IMPOSTERS';
+        } else {
+            const taskThreshold = Math.ceil(totalTasks * 0.8);
+            if (completedTasks >= taskThreshold) winner = 'CREWMATES';
+        }
 
-        if (crewmates <= imposters) return res.json({ winner: 'IMPOSTERS' });
-
-        const taskThreshold = Math.ceil(totalTasks * 0.8);
-        if (completedTasks >= taskThreshold) return res.json({ winner: 'CREWMATES' });
+        // If there is a winner, award points once and respond
+        if (winner) {
+            if (!winnerAwarded) {
+                try {
+                    const roleToAward = (winner === 'IMPOSTERS') ? 'IMPOSTER' : 'CREWMATE';
+                    const awardAmount = 5; // adjust as needed
+                    await increaseScoresByRole(roleToAward, awardAmount);
+                    console.log(`Awarded ${awardAmount} points to all ${roleToAward}s for winning (${winner}).`);
+                } catch (err) {
+                    console.error("Error awarding win scores:", err);
+                }
+                winnerAwarded = true;
+            }
+            return res.json({ winner });
+        }
 
         res.json({ winner: null });
     } catch (err) {
@@ -1130,6 +1178,105 @@ app.post('/vote', isAuthenticated, async (req, res) => {
         res.status(500).json({ error: "Failed to record vote" });
     }
 });
+
+
+
+
+
+app.post('/clear-scores',isAuthenticated, isemAdmin, async (req, res) => {
+    try {
+        await db.runP(`UPDATE users SET score = 0`);
+        res.json({ success: true, message: "All player scores have been reset to 0." });
+    } catch (err) {
+        console.error("Error clearing scores:", err);
+        res.status(500).json({ success: false, message: "Failed to clear scores." });
+    }
+});
+
+// Get my score (simple fetch for the current logged-in user)
+app.get('/my-score', isAuthenticated, async (req, res) => {
+    try {
+        const username = req.session.username;
+        const row = await db.getP(`SELECT score FROM users WHERE username = ?`, [username]);
+        if (!row) return res.status(404).json({ success: false, message: "User not found." });
+        res.json({ success: true, username, score: row.score ?? 0 });
+    } catch (err) {
+        console.error("Error fetching my score:", err);
+        res.status(500).json({ success: false, message: "Error fetching score." });
+    }
+});
+
+// Increase player's score by a specified amount
+async function increaseScore(username, amount) {
+    if (!username || typeof username !== 'string') {
+        throw new Error('Invalid username');
+    }
+    const inc = Number(amount);
+    if (!Number.isFinite(inc)) {
+        throw new Error('Invalid amount');
+    }
+
+    // Use a single UPDATE then SELECT to return the new score
+    await db.runP(`UPDATE users SET score = COALESCE(score,0) + ? WHERE username = ?`, [inc, username]);
+    const row = await db.getP(`SELECT score FROM users WHERE username = ?`, [username]);
+    return row ? row.score : null;
+}
+// Increase scores for all users with a given role by a specified amount.
+// Returns an array of { username, score } for affected users.
+async function increaseScoresByRole(role, amount) {
+    if (!role || typeof role !== 'string') {
+        throw new Error('Invalid role');
+    }
+    const inc = Number(amount);
+    if (!Number.isFinite(inc)) {
+        throw new Error('Invalid amount');
+    }
+
+    // Update all matching users, then return their new scores.
+    await db.runP(
+        `UPDATE users SET score = COALESCE(score, 0) + ? WHERE role = ?`,
+        [inc, role]
+    );
+
+    const rows = await db.allP(
+        `SELECT username, score FROM users WHERE role = ? ORDER BY username ASC`,
+        [role]
+    );
+
+    return rows; // e.g. [{ username: 'alice', score: 42 }, ...]
+}
+
+
+// Simple leaderboard with username, score and dense ranking (authenticated)
+app.get('/leaderboard-rankings', isAuthenticated, async (req, res) => {
+    try {
+        const rows = await db.allP(
+            `SELECT username, COALESCE(score, 0) AS score
+             FROM users
+             WHERE username != ?
+             ORDER BY score DESC, username ASC`,
+            [adminUsername]
+        );
+
+        const leaderboard = [];
+        let lastScore = null;
+        let rank = 0;
+
+        for (const r of rows) {
+            if (lastScore === null || r.score !== lastScore) {
+                rank += 1;
+                lastScore = r.score;
+            }
+            leaderboard.push({ username: r.username, score: r.score, rank });
+        }
+
+        res.json({ success: true, leaderboard });
+    } catch (err) {
+        console.error("Error fetching leaderboard rankings:", err);
+        res.status(500).json({ success: false, message: "Failed to fetch leaderboard rankings." });
+    }
+});
+
 
 
 // Start server
