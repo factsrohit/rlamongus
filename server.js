@@ -117,7 +117,8 @@ async function initExtraTables() {
             CREATE TABLE IF NOT EXISTS settings (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 emergency_meeting INTEGER DEFAULT 0,
-                tasks_per_player INTEGER DEFAULT 4
+                tasks_per_player INTEGER DEFAULT 4,
+                task_target INTEGER DEFAULT 1
             );
         `);
 
@@ -817,6 +818,19 @@ app.post('/start-game', async (req, res) => {
         }
 
         // Reset winner award flag for the new game
+        // Compute and save the task target based on players and tasks per player
+        try {
+            const taskTarget = Math.ceil(players.length * numTasks * 0.8);
+            // Save to settings table
+            await db.runP(
+                `UPDATE settings SET task_target = ? WHERE id = (SELECT id FROM settings ORDER BY id DESC LIMIT 1)`,
+                [taskTarget]
+            );
+            console.log(`Task target set to ${taskTarget} (players: ${players.length}, tasksPerPlayer: ${numTasks})`);
+        } catch (e) {
+            console.error('Error computing/saving task target:', e);
+        }
+
         winnerAwarded = false;
 
         res.send("Game started: All players reset, new tasks assigned, settings updated.");
@@ -1113,30 +1127,21 @@ app.post('/convert-crewmates', isemAdmin, async (req, res) => {
 // Task Progress
 app.get('/task-progress', isAuthenticated, async (req, res) => {
     try {
-        const settings = await db.getP(`SELECT tasks_per_player FROM settings ORDER BY id DESC LIMIT 1`);
-        const baseTasksPerPlayer = settings?.tasks_per_player ?? 10;
-
-        const alivePlayersRow = await db.getP(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`);
-        const totalPlayersRow = await db.getP(`SELECT COUNT(*) as count FROM users`);
-
-        const alivePlayers = alivePlayersRow.count;
-        const totalPlayers = totalPlayersRow.count || 1;
-
         const totalTasksRow = await db.getP(`SELECT COUNT(*) as total FROM player_tasks`);
         const completedTasksRow = await db.getP(`SELECT COUNT(*) as completed FROM player_tasks WHERE completed = 1`);
-
-        let taskTarget = baseTasksPerPlayer * alivePlayers;
-        const difficultyModifier = 1 + ((1 - (alivePlayers / totalPlayers)) * 0.5);
-        taskTarget *= difficultyModifier;
-
-        taskTarget = Math.min(taskTarget, totalTasksRow.total * 0.9);
-
-        const percentageCompleted = taskTarget > 0 ? (completedTasksRow.completed / taskTarget) * 100 : 0;
+        const settings = await db.getP('SELECT task_target FROM settings ORDER BY id DESC LIMIT 1');
+        
+        // Use settings task_target if available, otherwise default to 1
+        const taskTarget = (settings && settings.task_target > 0) ? settings.task_target : 1;
+        
+        const percentageCompleted = totalTasksRow.total > 0
+            ? (completedTasksRow.completed / taskTarget) * 100
+            : 0;
 
         res.json({
             totalTasks: totalTasksRow.total,
             completedTasks: completedTasksRow.completed,
-            taskTarget: Math.round(taskTarget),
+            taskTarget: taskTarget,
             percentageCompleted: percentageCompleted.toFixed(2)
         });
     } catch (err) {
