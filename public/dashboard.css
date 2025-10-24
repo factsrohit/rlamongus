@@ -67,13 +67,61 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    overflow-y: auto; 
+    background: rgba(0, 0, 0, 0.95);
     color: white;
     text-align: center;
-    padding-top: 20%;
     font-size: 24px;
-}
+    overflow-y: auto;
+    padding: 40px 20px;
+    box-sizing: border-box;
+  }
+  
+  .overlay-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background: var(--panel-bg);
+    border-radius: var(--rounded-lg);
+    border: 1px solid var(--primary-neon);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+  }
+  
+  /* Style for lists inside overlays */
+  .overlay ul {
+    max-height: 60vh;
+    overflow-y: auto;
+    margin: 20px auto;
+    padding: 10px;
+    background: rgba(10, 10, 25, 0.7);
+    border-radius: var(--rounded-md);
+    list-style: none;
+    text-align: left;
+  }
+  
+  .overlay ul li {
+    padding: 10px;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    margin-bottom: 5px;
+    word-wrap: break-word;
+  }
+  
+  /* Task list styling */
+  #taskList {
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 10px 0;
+    padding: 0;
+    list-style: none;
+  }
+  
+  #taskList li {
+    padding: 10px;
+    margin: 5px 0;
+    background: rgba(10, 10, 25, 0.7);
+    border-radius: var(--rounded-sm);
+    word-wrap: break-word;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+  }
 
   
   .container:hover {
@@ -115,6 +163,8 @@
     box-shadow: 0 0 10px rgba(0, 255, 153, 0.4);
     position: relative;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
   }
   
   .info-box:hover {

@@ -61,7 +61,7 @@
         <button class="alert" id="scorereset" onclick="clearScores()">✅ Clear Scores of All Players</button>
         <button class="alert" id="clearusers"  onclick="clearUsers()">⚠️ Clear All Users (Except Admin)</button>
         <div class="info-box">
-        <form id="add-task-form" >
+        <form id="add-task-form" class="container" >
             <input type="text" name="question" placeholder="Task Question" required />
             <input type="text" name="answer" placeholder="Correct Answer" required />
             <input type="text" name="hint" placeholder="Hint" />
@@ -71,15 +71,17 @@
         
     </div>
     <div id="emergencyOverlay" class="overlay">
-    <h2>🚨 Emergency Meeting 🚨</h2>
-    <p>All actions are disabled until the admin ends the meeting. Meet at the Server table.</p>
+    <div class="overlay-content">
+        <h2>🚨 Emergency Meeting 🚨</h2>
+        <p>All actions are disabled until the admin ends the meeting. Meet at the Server table.</p>
 
-    <div id="votingSection">
-        <h3>Vote to eject a player:</h3>
-        <div style="max-height: 300px; overflow-y: auto; margin-top: 20px;">
-            <ul id="playerVoteList" style="list-style: none; padding: 0;"></ul>
+        <div id="votingSection">
+            <h3>Vote to eject a player:</h3>
+            <div>
+                <ul id="playerVoteList"></ul>
+            </div>
+            <button onclick="castVote(null)">Skip Vote</button>
         </div>
-        <button onclick="castVote(null)">Skip Vote</button>
     </div>
     </div>
 
@@ -102,20 +104,24 @@
         ">
         </div>
     <div id="winnerOverlay" class="overlay" style="display: none;">
-        <h2 id="winnerMessage">🎉 Winner: </h2>
-        <button class="neon" id="newgamebtn" onclick="startGame()" style="display: none;" >ReStart Game</button>
-        <p>The game has ended. Please wait for the admin to restart the game.</p>
-        <div style="max-height: 300px; overflow-y: auto; margin-top: 20px;">
-            <h3 style="margin: 6px 12px;">Leaderboard</h3>
-            <ul id="leaderboardList" style="list-style: none; padding: 8px 12px; margin: 0;">
-                <!-- leaderboard items injected here by mainmenu.js -->
-            </ul>
-        </div>
+            <div class="overlay-content">
+                <h2 id="winnerMessage">🎉 Winner: </h2>
+                <button class="neon" id="newgamebtn" onclick="startGame()" style="display: none;" >ReStart Game</button>
+                <p>The game has ended. Please wait for the admin to restart the game.</p>
+                <div>
+                    <h3>Leaderboard</h3>
+                    <ul id="leaderboardList">
+                        <!-- leaderboard items injected here by mainmenu.js -->
+                    </ul>
+                </div>
+            </div>
 
     </div>
     <div id="deadOverlay" class="overlay" style="display: none;">
-        <h2>💀 You Are Dead 💀</h2>
-        <p>You can no longer perform actions. Wait for the game to end.</p>
+        <div class="overlay-content">
+            <h2>💀 You Are Dead 💀</h2>
+            <p>You can no longer perform actions. Wait for the game to end.</p>
+        </div>
     </div>
     <script src="mainmenu.js"></script>
 
