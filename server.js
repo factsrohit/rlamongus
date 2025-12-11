@@ -208,6 +208,8 @@ function isemAdmin(req, res, next) {
 // Root route
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
 
+
+
 // Register route
 app.post('/register', async (req, res) => {
     try {
@@ -252,7 +254,7 @@ app.post('/register', async (req, res) => {
         req.session.username = username;
         if (newUser && newUser.id) req.session.userId = newUser.id;
 
-        res.redirect('/dashboard.html');
+        res.redirect('*');
     } catch (err) {
         console.error("Error registering user:", err);
         res.render('error', { message: "Error registering user. Please try again." });
@@ -277,7 +279,7 @@ app.post('/login', async (req, res) => {
         if (match) {
             req.session.username = username;
             req.session.userId = user.id;
-            res.redirect('/dashboard.html');
+            res.redirect('*');
         } else {
             res.render('error', { message: "Invalid password. Please try again." });
         }
@@ -1282,6 +1284,15 @@ app.get('/leaderboard-rankings', isAuthenticated, async (req, res) => {
     }
 });
 
+
+
+// Serve React build folder
+app.use(express.static(path.join(__dirname, "react-frontend/dist")));
+
+// Fallback for SPA routing
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "react-frontend/dist", "index.html"));
+});
 
 
 // Start server

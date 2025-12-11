@@ -1,0 +1,453 @@
+/* Optimized Futuristic Cyberpunk Theme - Low Connectivity & Rounder Edges */
+
+/* Using system fonts first to reduce loading time */
+:root {
+    --primary-neon: #00ffff;
+    --secondary-neon: #ff00d0;
+    --tertiary-neon: #00ff99;
+    --alert-neon: #ff0033;
+    --warning-neon: #ffcc00;
+    --dark-bg: #050510;
+    --panel-bg: rgba(17, 17, 30, 0.8);
+    --glass-effect: rgba(10, 10, 20, 0.6);
+    --font-primary: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-secondary: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --rounded-lg: 16px;
+    --rounded-md: 12px;
+    --rounded-sm: 8px;
+  }
+  
+  /* Base Elements - simplified */
+  body {
+    background: url('/assets/background/A_futuristic_cyberpunk_cityscape_at_night_with_vib.png') no-repeat center center fixed;
+    background-size: cover;
+    font-family: var(--font-secondary);
+    background-color: var(--dark-bg);
+    color: var(--primary-neon);
+    text-align: center;
+    padding: 10px;
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+  
+  #root {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    flex-direction: column;
+    padding-top: 20px;
+  }
+  
+  /* Simplified background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 40%, rgba(5, 5, 25, 0.5) 100%);
+    pointer-events: none;
+    z-index: -1;
+  }
+  
+  /* Container with rounder edges and simplified effects */
+  .container {
+    max-width: 450px;
+    padding: 30px;
+    border-radius: var(--rounded-lg);
+    background: var(--panel-bg);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+    text-align: center;
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin: 20px auto;
+  }
+  .overlay {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    color: white;
+    text-align: center;
+    font-size: 24px;
+    overflow-y: auto;
+    padding: 40px 20px;
+    box-sizing: border-box;
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .overlay-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background: var(--panel-bg);
+    border-radius: var(--rounded-lg);
+    border: 1px solid var(--primary-neon);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+  }
+  
+  /* Style for lists inside overlays */
+  .overlay ul {
+    max-height: 60vh;
+    overflow-y: auto;
+    margin: 20px auto;
+    padding: 10px;
+    background: rgba(10, 10, 25, 0.7);
+    border-radius: var(--rounded-md);
+    list-style: none;
+    text-align: left;
+  }
+  
+  .overlay ul li {
+    padding: 10px;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    margin-bottom: 5px;
+    word-wrap: break-word;
+  }
+  
+  /* Task list styling */
+  #taskList {
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 10px 0;
+    padding: 0;
+    list-style: none;
+  }
+  
+  #taskList li {
+    padding: 10px;
+    margin: 5px 0;
+    background: rgba(10, 10, 25, 0.7);
+    border-radius: var(--rounded-sm);
+    word-wrap: break-word;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+  }
+
+  
+  .container:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+  }
+  
+  /* Title with simpler gradient animation */
+  h1 {
+    font-family: var(--font-primary);
+    font-size: 28px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 0 0 25px 0;
+    background: linear-gradient(90deg, #00ffff, #ff00d0);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: simpleGradient 4s ease infinite;
+  }
+  
+  /* Simplified gradient animation */
+  @keyframes simpleGradient {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+  }
+  
+  /* Information Box with rounder edges */
+  .info-box {
+    background: rgba(10, 10, 25, 0.7);
+    padding: 18px;
+    border-radius: var(--rounded-md);
+    margin: 20px 0;
+    font-size: 16px;
+    color: var(--tertiary-neon);
+    border: 1px solid var(--tertiary-neon);
+    box-shadow: 0 0 10px rgba(0, 255, 153, 0.4);
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+  }
+  
+  .info-box:hover {
+    box-shadow: 0 0 15px rgba(0, 255, 153, 0.5);
+    transform: scale(1.01);
+  }
+  
+  /* Simplified Buttons with rounder edges */
+  button {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: var(--rounded-lg);
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: var(--font-primary);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Button hover effect - simpler */
+  button:hover {
+    transform: translateY(-2px);
+  }
+  
+  button:active {
+    transform: translateY(1px);
+  }
+  
+  /* Neon Cyan Button with reduced effects */
+  button.neon {
+    background: rgba(0, 255, 255, 0.15);
+    color: var(--primary-neon);
+    border: 2px solid var(--primary-neon);
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+  }
+  
+  button.neon:hover {
+    background: rgba(0, 255, 255, 0.25);
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.5);
+    color: #fff;
+  }
+  
+  /* Kill Button with reduced effects */
+  button.kill {
+    background: rgba(255, 0, 51, 0.15);
+    color: var(--alert-neon);
+    border: 2px solid var(--alert-neon);
+    box-shadow: 0 0 8px rgba(255, 0, 51, 0.4);
+  }
+  
+  button.kill:hover {
+    background: rgba(255, 0, 51, 0.25);
+    box-shadow: 0 0 12px rgba(255, 0, 51, 0.5);
+    color: #fff;
+  }
+  
+  /* Alert Button with reduced effects */
+  button.alert {
+    background: rgba(255, 204, 0, 0.15);
+    color: var(--warning-neon);
+    border: 2px solid var(--warning-neon);
+    box-shadow: 0 0 8px rgba(255, 204, 0, 0.4);
+  }
+  
+  button.alert:hover {
+    background: rgba(255, 204, 0, 0.25);
+    box-shadow: 0 0 12px rgba(255, 204, 0, 0.5);
+    color: #000;
+  }
+  
+  /* Optimized button glow - reduced animation */
+  button.neon, button.kill, button.alert {
+    animation: simplePulse 3s ease-in-out infinite;
+  }
+  
+  @keyframes simplePulse {
+    0%, 100% { box-shadow: 0 0 8px currentColor; }
+    50% { box-shadow: 0 0 12px currentColor; }
+  }
+  
+  /* Simplified loading indicator */
+  .loader {
+    width: 40px;
+    height: 40px;
+    border: 3px solid transparent;
+    border-top-color: var(--primary-neon);
+    border-radius: 50%;
+    margin: 15px auto;
+    animation: spin 1.5s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Status indicators with rounder design */
+  .status {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+  
+  .status.online {
+    background-color: var(--tertiary-neon);
+    box-shadow: 0 0 5px var(--tertiary-neon);
+  }
+  
+  .status.offline {
+    background-color: var(--alert-neon);
+    box-shadow: 0 0 5px var(--alert-neon);
+  }
+  
+  .status.warning {
+    background-color: var(--warning-neon);
+    box-shadow: 0 0 5px var(--warning-neon);
+  }
+  
+  /* Form inputs with rounder corners */
+  input[type="text"],
+  input[type="password"] {
+    width: 100%;
+    padding: 15px;
+    background: rgba(10, 10, 25, 0.6);
+    border: 1px solid var(--primary-neon);
+    border-radius: var(--rounded-md);
+    color: #fff;
+    font-size: 16px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.2);
+  }
+  
+  input[type="text"]:focus,
+  input[type="password"]:focus {
+    outline: none;
+    border-color: var(--secondary-neon);
+    box-shadow: 0 0 10px rgba(255, 0, 208, 0.3);
+  }
+  
+  /* Data display with rounder corners */
+  .data-display {
+    background: rgba(10, 10, 25, 0.7);
+    border: 1px solid var(--primary-neon);
+    border-radius: var(--rounded-md);
+    padding: 15px;
+    color: var(--primary-neon);
+    position: relative;
+    margin: 15px 0;
+  }
+  
+  /* Progress bar with rounder corners */
+  .progress {
+    height: 10px;
+    background: rgba(10, 10, 25, 0.7);
+    border-radius: var(--rounded-sm);
+    overflow: hidden;
+    margin: 15px 0;
+  }
+  
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--tertiary-neon), var(--primary-neon));
+    border-radius: var(--rounded-sm);
+    transition: width 0.5s ease-in-out;
+  }
+  
+  /* Simplified tooltip */
+  [data-tooltip] {
+    position: relative;
+    cursor: help;
+  }
+  
+  [data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 12px;
+    background: var(--dark-bg);
+    color: var(--primary-neon);
+    border: 1px solid var(--primary-neon);
+    border-radius: var(--rounded-sm);
+    font-size: 14px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.2);
+    z-index: 10;
+  }
+  
+  [data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  /* Media Queries - Simplified */
+  @media (max-width: 768px) {
+    .container {
+      max-width: 90%;
+      padding: 20px;
+    }
+    
+    h1 {
+      font-size: 24px;
+    }
+    
+    button {
+      padding: 14px;
+      font-size: 16px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .container {
+      max-width: 95%;
+      padding: 15px;
+    }
+    
+    h1 {
+      font-size: 20px;
+    }
+    
+    .info-box {
+      padding: 12px;
+      font-size: 14px;
+    }
+    
+    button {
+      padding: 12px;
+      font-size: 14px;
+    }
+  }
+  
+  /* Simple scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: rgba(10, 10, 25, 0.5);
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: var(--primary-neon);
+    border-radius: 4px;
+  }
+
+  .card {
+  background: #111;
+  padding: 15px;
+  border-radius: 10px;
+  color: #fff;
+  }
+
+  .task-item {
+  border-bottom: 1px solid #333;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  }
+
+  .task-hint {
+  opacity: 0.7;
+  font-size: 0.9rem;
+  }
