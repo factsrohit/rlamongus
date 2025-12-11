@@ -1,6 +1,6 @@
 import React from "react";
 
-function WinnerOverlay({ visible, winnerMessage, leaderboard = [], isadmin ,onRestart }) {
+function WinnerOverlay({ visible, winnerMessage, leaderboard = [], isAdmin, onRestart }) {
   if (!visible) return null;
 
   return (
@@ -8,7 +8,7 @@ function WinnerOverlay({ visible, winnerMessage, leaderboard = [], isadmin ,onRe
       <div className="overlay-content">
         <h2 id="winnerMessage">{winnerMessage || "🎉 Game Over!"}</h2>
         <p>The game has ended. Please wait for the admin to restart the game.</p>
-        
+
         <div>
           <h3>Leaderboard</h3>
           <ul id="leaderboardList">
@@ -23,16 +23,17 @@ function WinnerOverlay({ visible, winnerMessage, leaderboard = [], isadmin ,onRe
             )}
           </ul>
         </div>
-        if(isadmin){
-        <button 
-          className="neon" 
-          id="newgamebtn" 
-          onClick={onRestart} 
-          style={{ marginTop: 20, display: "block" }}
-        >
-          ReStart Game
-        </button>
-        }
+
+        {isAdmin && (
+          <button
+            className="neon"
+            id="newgamebtn"
+            onClick={onRestart}
+            style={{ marginTop: 20, display: "block" }}
+          >
+            ReStart Game
+          </button>
+        )}
       </div>
     </div>
   );

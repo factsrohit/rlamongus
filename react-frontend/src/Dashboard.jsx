@@ -136,8 +136,8 @@ export default function Dashboard() {
       {shouldShowMainContent && isAdmin && <AdminControls />}
 
       {/* Overlays - render on top */}
-      <DeadOverlay visible={deadVisible} />
-      <EmergencyOverlay visible={emergencyVisible} />
+      {!isAdmin &&<DeadOverlay visible={deadVisible} />}
+      {!isAdmin && <EmergencyOverlay visible={emergencyVisible} />}
       <WinnerOverlay
         visible={winnerVisible}
         winnerMessage={winnerMessage}
