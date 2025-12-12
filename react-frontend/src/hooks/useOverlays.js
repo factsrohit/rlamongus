@@ -5,7 +5,6 @@ export function useOverlays(updateInterval = 2000) {
   const [deadVisible, setDeadVisible] = useState(false);
   const [emergencyVisible, setEmergencyVisible] = useState(false);
   const [winnerMessage, setWinnerMessage] = useState("");
-  const [leaderboard, setLeaderboard] = useState([]);
 
   // --- Check game status and overlays ---
   const checkStatus = useCallback(async () => {
@@ -25,18 +24,6 @@ export function useOverlays(updateInterval = 2000) {
         setWinnerMessage(`🎉 ${formattedWinner} Win!`);
         
         // Fetch leaderboard
-        try {
-          const leaderRes = await fetch("/leaderboard-rankings");
-          const leaderData = await leaderRes.json();
-          if (leaderData.success && Array.isArray(leaderData.rankings)) {
-            setLeaderboard(leaderData.rankings);
-          } else if (Array.isArray(leaderData)) {
-            // Handle case where rankings is at top level
-            setLeaderboard(leaderData);
-          }
-        } catch (err) {
-          console.error("Failed to fetch leaderboard:", err);
-        }
       } else {
         setWinnerVisible(false);
       }
@@ -65,7 +52,6 @@ export function useOverlays(updateInterval = 2000) {
     emergencyVisible,
     setEmergencyVisible,
     winnerMessage,
-    leaderboard,
     checkStatus,
   };
 }

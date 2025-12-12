@@ -34,7 +34,6 @@ export default function Dashboard() {
     emergencyVisible, 
     setEmergencyVisible,
     winnerMessage,
-    leaderboard,
     checkStatus 
   } = useOverlays();
   const [taskPromptVisible, setTaskPromptVisible] = useState(false);
@@ -137,7 +136,6 @@ export default function Dashboard() {
       <WinnerOverlay
         visible={winnerVisible}
         winnerMessage={winnerMessage}
-        leaderboard={leaderboard}
         isAdmin={isAdmin}
         onRestart={startGame}
       />
