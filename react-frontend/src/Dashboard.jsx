@@ -25,7 +25,7 @@ export default function Dashboard() {
   const { location, lastUpdate, refreshLocation } = useLocation();
   const { nearbyPlayers, refresh: refreshNearby } = useNearbyPlayers();
   const { tasks, taskStats, refreshTasks, submitTask } = useTasks();
-  const {startGame} = useAdminControls();
+  const {startGame, endMeeting} = useAdminControls();
   const { 
     winnerVisible, 
     setWinnerVisible,
@@ -80,8 +80,21 @@ export default function Dashboard() {
   // Don't early return - render overlays on top of main content instead
   const shouldShowMainContent = (!deadVisible && !emergencyVisible && !winnerVisible) || isAdmin;
 
-  
+  if(winnerVisible) {
+    return <WinnerOverlay
+        winnerMessage={winnerMessage}
+        isAdmin={isAdmin}
+        onRestart={startGame}
+      />
+  }
 
+  if(deadVisible && !isAdmin) {
+    return <DeadOverlay visible={deadVisible} isAdmin={isAdmin} />;
+  }
+
+  if (emergencyVisible) {
+    return <EmergencyOverlay visible={emergencyVisible} isAdmin={isAdmin} />;
+  }
 
   // --- Main Dashboard Render ---
   return (
@@ -130,15 +143,7 @@ export default function Dashboard() {
       {/* Admin Controls - render always if admin */}
       {shouldShowMainContent && isAdmin && <AdminControls setWinnerVisible={setWinnerVisible} />}
 
-      {/* Overlays - render on top */}
-      {!isAdmin &&<DeadOverlay visible={deadVisible} />}
-      {!isAdmin && <EmergencyOverlay visible={emergencyVisible} />}
-      <WinnerOverlay
-        visible={winnerVisible}
-        winnerMessage={winnerMessage}
-        isAdmin={isAdmin}
-        onRestart={startGame}
-      />
+      
     </>
   );
 }

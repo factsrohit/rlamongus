@@ -1,11 +1,10 @@
 import React from "react";
 import useLeaderboard from "../../hooks/useLeaderboard"; 
 
-function WinnerOverlay({ visible, winnerMessage, isAdmin, onRestart }) {
+function WinnerOverlay({winnerMessage, isAdmin, onRestart }) {
   
   const { leaderboard, loading, error } = useLeaderboard();
 
-  if (!visible) return null;
   if (loading) return <p>Loading leaderboard...</p>;
   if (error) return <p>Unable to load leaderboard.</p>;
 

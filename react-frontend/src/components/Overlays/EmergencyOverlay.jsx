@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-
-function EmergencyOverlay({ visible, playersList = [] }) {
+import { useAdminControls } from "../../hooks/useAdminControls";
+function EmergencyOverlay({ visible, isAdmin}) {
   const [players, setPlayers] = useState([]);
-
+  const { endMeeting } = useAdminControls();
   // Don't do anything if not visible
   if (!visible) return null;
 
@@ -11,7 +11,7 @@ function EmergencyOverlay({ visible, playersList = [] }) {
       // Fetch available players for voting
       const fetchPlayers = async () => {
         try {
-          const res = await fetch("/all");
+          const res = await fetch("/players");
           const data = await res.json();
           if (data.players && Array.isArray(data.players)) {
             setPlayers(data.players);
@@ -29,7 +29,7 @@ function EmergencyOverlay({ visible, playersList = [] }) {
       await fetch("/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerId }),
+        body: JSON.stringify({ vote_for : playerId }),
       });
       alert("Vote cast!");
     } catch (err) {
@@ -37,13 +37,30 @@ function EmergencyOverlay({ visible, playersList = [] }) {
     }
   };
 
+  const handleEndMeeting = async () => {
+        if (!isAdmin) return alert("❌ Only admin can end the meeting.");
+        const result = await endMeeting();
+        if (result.success) alert("✅ Emergency meeting ended!");
+        else alert("❌ unable to end meeting");
+    };
+
   return (
     <div className="overlay">
       <div className="overlay-content">
         <h2>🚨 Emergency Meeting 🚨</h2>
         <p>All actions are disabled until the admin ends the meeting. Meet at the Server table.</p>
+        {isAdmin && (
+          <button
+            className="neon"
+            id="endmeetbtn"
+            onClick={handleEndMeeting}
+            style={{ marginTop: 20, display: "block" }}
+          >
+            End Meeting
+          </button>
+        )}
 
-        <div id="votingSection">
+        {!isAdmin && (<div id="votingSection">
           <h3>Vote to eject a player:</h3>
           <ul id="playerVoteList">
             {players.map((player) => (
@@ -54,7 +71,8 @@ function EmergencyOverlay({ visible, playersList = [] }) {
           </ul>
           <button onClick={() => castVote(null)}>Skip Vote</button>
         </div>
-      </div>
+        )}
+        </div>
     </div>
   );
 }

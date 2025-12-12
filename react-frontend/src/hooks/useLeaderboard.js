@@ -72,19 +72,18 @@ export default function useLeaderboard(updateInterval = 5000) {
       setLoading(false);
     }
   };
-
+  
   useEffect(() => {
     fetchLeaderboard();
-    const interval = setInterval(fetchLeaderboard, updateInterval);
-    return () => clearInterval(interval);
+    /*const interval = setInterval(fetchLeaderboard, updateInterval);
+    return () => clearInterval(interval);*/
+    return () => fetchLeaderboard();
   }, []);
-
   return {
     leaderboard,
     me,
     topScore,
     loading,
     error,
-    refresh: fetchLeaderboard,
   };
 }
