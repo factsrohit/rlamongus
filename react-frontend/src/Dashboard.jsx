@@ -17,7 +17,7 @@ import { useRole } from "./hooks/useRole";
 import { useScore } from "./hooks/useScore";
 import { useNearbyPlayers } from "./hooks/useNearbyPlayers";
 import { useOverlays } from "./hooks/useOverlays";
-
+import { useAdminControls } from "./hooks/useAdminControls";
 export default function Dashboard() {
   // --- State from hooks ---
   const { role, isImposter, refresh: refreshRole } = useRole();
@@ -25,6 +25,7 @@ export default function Dashboard() {
   const { location, lastUpdate, refreshLocation } = useLocation();
   const { nearbyPlayers, refresh: refreshNearby } = useNearbyPlayers();
   const { tasks, taskStats, refreshTasks, submitTask } = useTasks();
+  const {startGame} = useAdminControls();
   const { 
     winnerVisible, 
     setWinnerVisible,
@@ -36,7 +37,7 @@ export default function Dashboard() {
     leaderboard,
     checkStatus 
   } = useOverlays();
-
+  const [taskPromptVisible, setTaskPromptVisible] = useState(false);
   // Additional state
   const [isAdmin, setIsAdmin] = useState(false);
   const [gameStatus, setGameStatus] = useState("Loading game status...");
@@ -71,22 +72,17 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
+
+
+
+
+
   // --- Render overlays if active ---
   // Don't early return - render overlays on top of main content instead
-  const shouldShowMainContent = !deadVisible && !emergencyVisible && !winnerVisible;
+  const shouldShowMainContent = (!deadVisible && !emergencyVisible && !winnerVisible) || isAdmin;
 
-  const handleRestart = async () => {
-    try {
-      const res = await fetch("/start-game", { method: "POST" });
-      const data = await res.json();
-      if (data.success) {
-        setWinnerVisible(false);
-        window.location.reload(); // Refresh to get new game state
-      }
-    } catch (err) {
-      console.error("Failed to restart game:", err);
-    }
-  };
+  
+
 
   // --- Main Dashboard Render ---
   return (
@@ -133,7 +129,7 @@ export default function Dashboard() {
       )}
 
       {/* Admin Controls - render always if admin */}
-      {shouldShowMainContent && isAdmin && <AdminControls />}
+      {shouldShowMainContent && isAdmin && <AdminControls setWinnerVisible={setWinnerVisible} />}
 
       {/* Overlays - render on top */}
       {!isAdmin &&<DeadOverlay visible={deadVisible} />}
@@ -143,7 +139,7 @@ export default function Dashboard() {
         winnerMessage={winnerMessage}
         leaderboard={leaderboard}
         isAdmin={isAdmin}
-        onRestart={handleRestart}
+        onRestart={startGame}
       />
     </>
   );

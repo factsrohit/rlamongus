@@ -11,7 +11,7 @@ function EmergencyOverlay({ visible, playersList = [] }) {
       // Fetch available players for voting
       const fetchPlayers = async () => {
         try {
-          const res = await fetch("/players");
+          const res = await fetch("/all");
           const data = await res.json();
           if (data.players && Array.isArray(data.players)) {
             setPlayers(data.players);

@@ -16,7 +16,7 @@ export function useDashboard() {
   // --- Fetch dashboard info ---
   const refreshDashboard = useCallback(async () => {
     try {
-      const res = await fetch("/api/dashboard-info");
+      const res = await fetch("/statboard");
       const data = await res.json();
 
       setRole(data.role);

@@ -5,9 +5,19 @@ export function useAdminControls() {
 
   // --- Start game ---
   const startGame = useCallback(async () => {
+    const numTasks = parseInt(prompt("Enter number of tasks per player:", "4"));
+
+  if (!numTasks || numTasks <= 0) {
+    alert("Please enter a valid number greater than 0.");
+    return;
+  }
     setIsLoading(true);
     try {
-      const res = await fetch("/start-game", { method: "POST" });
+      const res = await fetch("/start-game", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ numTasks })
+    });
       const data = await res.json();
       return { success: data.success, message: data.message || "Game restarted" };
     } catch (err) {
@@ -51,8 +61,13 @@ export function useAdminControls() {
   // --- Convert crewmates to imposters ---
   const convertCrewmates = useCallback(async () => {
     setIsLoading(true);
+    const count = prompt("Enter the number of crewmates to convert to imposters:");
     try {
-      const res = await fetch("/convert-crewmates", { method: "POST" });
+      const res = await fetch('/convert-crewmates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: parseInt(count) })
+    });
       const data = await res.json();
       return { success: data.success, message: data.message || "Crewmates converted" };
     } catch (err) {

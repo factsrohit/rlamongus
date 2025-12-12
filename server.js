@@ -307,10 +307,13 @@ app.post('/clear-users', async (req, res) => {
     try {
         await db.runAsync(`DELETE FROM users WHERE username != ?`, [adminUsername]);
         await db.runAsync(`DELETE FROM locations WHERE username != ?`, [adminUsername]);
-        res.send("All users (except admin) have been deleted");
+        res.json({ success: true, message: "All users (except admin) have been deleted" });
     } catch (err) {
         console.error("Error clearing users:", err);
-        res.status(500).send("Error clearing users");
+        res.status(500).json({
+        success: false,
+        message: "Error clearing users"
+        });
     }
 });
 
@@ -835,10 +838,18 @@ app.post('/start-game', async (req, res) => {
 
         winnerAwarded = false;
 
-        res.send("Game started: All players reset, new tasks assigned, settings updated.");
+        
+        res.json({
+        success: true,
+        message: "Game started: All players reset, new tasks assigned, settings updated."
+        });
+
     } catch (err) {
         console.error("Error in /start-game:", err);
-        res.status(500).send("Failed to start game.");
+        res.status(500).json({
+        success: false,
+        message: "Failed to start game."
+        });
     }
 });
 
@@ -973,10 +984,14 @@ app.post('/add-task', isemAdmin, async (req, res) => {
     try {
         const { question, answer, hint } = req.body;
         await db.runP(`INSERT INTO tasks (question, answer, hint) VALUES (?, ?, ?)`, [question, answer, hint]);
-        res.send("Task added successfully.");
+        res.json({ success: true, message: "Task added successfully." });
+
     } catch (err) {
         console.error("Error adding task:", err);
-        res.status(500).send("Failed to add task.");
+        res.status(500).json({
+        success: false,
+        message: "Failed to add task."
+        });
     }
 });
 

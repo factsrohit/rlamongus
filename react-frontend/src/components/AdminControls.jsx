@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import { useAdminControls } from "../hooks/useAdminControls";
 
-function AdminControls() {
+function AdminControls({ setWinnerVisible}) {
     const { isLoading, startGame, startMeeting, endMeeting, convertCrewmates, clearScores, clearUsers, addTask } = useAdminControls();
     const [taskForm, setTaskForm] = useState({ question: "", answer: "", hint: "" });
 
     const handleStartGame = async () => {
+        setWinnerVisible(false);
         const result = await startGame();
         if (result.success) alert("✅ Game restarted!");
         else alert("❌ " + result.error);
-    };
+    }
+
 
     const handleStartMeeting = async () => {
         const result = await startMeeting();
