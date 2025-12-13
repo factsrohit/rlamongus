@@ -8,6 +8,7 @@ import DeadOverlay from "./components/Overlays/DeadOverlay";
 import WinnerOverlay from "./components/Overlays/WinnerOverlay";
 import EmergencyOverlay from "./components/Overlays/EmergencyOverlay";
 import TaskList from "./components/TaskList";
+import GameStatus from "./components/GameStatus";
 
 // Custom Hooks
 import { useDashboard } from "./hooks/useDashboard";
@@ -36,10 +37,10 @@ export default function Dashboard() {
     winnerMessage,
     checkStatus 
   } = useOverlays();
-  const [taskPromptVisible, setTaskPromptVisible] = useState(false);
+
   // Additional state
   const [isAdmin, setIsAdmin] = useState(false);
-  const [gameStatus, setGameStatus] = useState("Loading game status...");
+ 
 
   // --- Check if admin on mount ---
   useEffect(() => {
@@ -55,29 +56,11 @@ export default function Dashboard() {
     checkAdmin();
   }, []);
 
-  // --- Fetch game status ---
-  useEffect(() => {
-    const fetchGameStatus = async () => {
-      try {
-        const res = await fetch("/game-status");
-        const data = await res.json();
-        setGameStatus(data.status || "Loading...");
-      } catch (err) {
-        console.error("Failed to fetch game status:", err);
-      }
-    };
-    fetchGameStatus();
-    const interval = setInterval(fetchGameStatus, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-
 
 
 
 
   // --- Render overlays if active ---
-  // Don't early return - render overlays on top of main content instead
   const shouldShowMainContent = (!deadVisible && !emergencyVisible && !winnerVisible) || isAdmin;
 
   if(winnerVisible) {
@@ -120,7 +103,8 @@ export default function Dashboard() {
             <p>Remaining Tasks: {taskStats.remaining}</p>
           </div>
 
-          <p>{gameStatus}</p>
+          <GameStatus />
+
           <p>🕵️‍♂️ Role: {role}</p>
           <p>🏆 Current Score: {score}</p>
 
