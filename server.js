@@ -332,10 +332,10 @@ app.post('/update-location', async (req, res) => {
              SET latitude = excluded.latitude, longitude = excluded.longitude`,
             [username, latitude, longitude]
         );
-        res.send("Location updated");
+        res.json({success: true, message: "Location updated"});
     } catch (err) {
         console.error("Database error:", err);
-        res.status(500).send("Error updating location");
+        res.status(500).json({success: false, message: "Error updating location"});
     }
 });
 

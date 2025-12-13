@@ -1,15 +1,22 @@
-import React from "react";
 
-const LocationBox = ({ player }) => {
+import { useLocation } from "../hooks/useLocation";
+
+function LocationBox(){
+    const { location, lastUpdate, refreshLocation } = useLocation( 5000 );
+
   return (
-    <div className="location-box">
-      <p>{player.name}</p>
-      <p>Role: {player.role}</p>
-      <p>
-        Lat: {player.lat.toFixed(3)}, Lng: {player.lng.toFixed(3)}
-      </p>
+    <>
+    <p>Location Should Auto Update, If It Doesn't, Try:</p>
+    <button className="neon" onClick={refreshLocation}>Refresh Current Location</button>
+    
+    <div className="info-box">
+      
+            <p>{location}</p>
+            <p>{lastUpdate}</p>
     </div>
+    </>
   );
+  
 };
 
 export default LocationBox;

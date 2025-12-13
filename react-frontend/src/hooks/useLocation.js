@@ -51,5 +51,5 @@ export function useLocation(updateInterval = 5000) {
     return () => clearInterval(interval);
   }, [refreshLocation, updateInterval]);
 
-  return { location, lastUpdate, refreshLocation };
+  return { location, lastUpdate, refresh : refreshLocation };
 }

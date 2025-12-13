@@ -9,22 +9,22 @@ import WinnerOverlay from "./components/Overlays/WinnerOverlay";
 import EmergencyOverlay from "./components/Overlays/EmergencyOverlay";
 import TaskList from "./components/TaskList";
 import GameStatus from "./components/GameStatus";
+import LocationBox from "./components/LocationBox";
 
 // Custom Hooks
 import { useDashboard } from "./hooks/useDashboard";
 import { useTasks } from "./hooks/useTasks";
-import { useLocation } from "./hooks/useLocation";
+
 import { useRole } from "./hooks/useRole";
 import { useScore } from "./hooks/useScore";
-import { useNearbyPlayers } from "./hooks/useNearbyPlayers";
+
 import { useOverlays } from "./hooks/useOverlays";
 import { useAdminControls } from "./hooks/useAdminControls";
 export default function Dashboard() {
   // --- State from hooks ---
   const { role, isImposter, refresh: refreshRole } = useRole();
   const { score, refresh: refreshScore } = useScore();
-  const { location, lastUpdate, refreshLocation } = useLocation();
-  const { nearbyPlayers, refresh: refreshNearby } = useNearbyPlayers();
+  
   const { tasks, taskStats, refreshTasks, submitTask } = useTasks();
   const {startGame, endMeeting} = useAdminControls();
   const { 
@@ -86,16 +86,9 @@ export default function Dashboard() {
       {shouldShowMainContent && (
         <div className="container">
           <h1>Welcome to Real-Life AmongUs</h1>
-          <p>Location Should Auto Update, If It Doesn't, Try:</p>
-
-          <button className="neon" onClick={refreshLocation}>Refresh Current Location</button>
-
-          <div className="info-box">
-            <p>{location}</p>
-            <p>{lastUpdate}</p>
-            <p>🕵️‍♂️ Nearby Players: {nearbyPlayers.length > 0 ? nearbyPlayers.length : "NO players currently within your range."}</p>
-          </div>
-
+          
+          <LocationBox />
+          
           <div id="taskProgress" className="info-box">
             <h3>Task Progress</h3>
             <p>Total Tasks: {taskStats.total}</p>
