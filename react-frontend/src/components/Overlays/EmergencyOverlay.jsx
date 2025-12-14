@@ -3,26 +3,26 @@ import { useAdminControls } from "../../hooks/useAdminControls";
 function EmergencyOverlay({ visible, isAdmin}) {
   const [players, setPlayers] = useState([]);
   const { endMeeting } = useAdminControls();
-  // Don't do anything if not visible
-  if (!visible) return null;
 
   useEffect(() => {
-    if (visible) {
-      // Fetch available players for voting
-      const fetchPlayers = async () => {
-        try {
-          const res = await fetch("/players");
-          const data = await res.json();
-          if (data.players && Array.isArray(data.players)) {
-            setPlayers(data.players);
-          }
-        } catch (err) {
-          console.error("Failed to fetch players:", err);
+    // Fetch available players for voting when visible
+    const fetchPlayers = async () => {
+      if (!visible) return;
+      try {
+        const res = await fetch("/players");
+        const data = await res.json();
+        if (data.players && Array.isArray(data.players)) {
+          setPlayers(data.players);
         }
-      };
-      fetchPlayers();
-    }
+      } catch (err) {
+        console.error("Failed to fetch players:", err);
+      }
+    };
+    fetchPlayers();
   }, [visible]);
+
+  // Don't do anything if not visible
+  if (!visible) return null;
 
   const castVote = async (playerId) => {
     try {

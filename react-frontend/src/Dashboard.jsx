@@ -13,24 +13,25 @@ import LocationBox from "./components/LocationBox";
 import TaskProgress from "./components/TaskProgress";
 import DisplayRole from "./components/DisplayRole";
 import PlayerScore from "./components/PlayerScore";
+
 // Custom Hooks
 import { useRole } from "./hooks/useRole";
 import { useOverlays } from "./hooks/useOverlays";
 import { useAdminControls } from "./hooks/useAdminControls";
 export default function Dashboard() {
   // --- State from hooks ---
-  const { role, isImposter, refresh: refreshRole } = useRole();
+  const { role, isImposter, refresh: _refreshRole } = useRole();
 
-  const {startGame, endMeeting} = useAdminControls();
+  const {startGame, endMeeting: _endMeeting} = useAdminControls();
   const { 
     winnerVisible, 
     setWinnerVisible,
     deadVisible, 
-    setDeadVisible,
+    setDeadVisible: _setDeadVisible,
     emergencyVisible, 
-    setEmergencyVisible,
+    setEmergencyVisible: _setEmergencyVisible,
     winnerMessage,
-    checkStatus 
+    checkStatus: _checkStatus 
   } = useOverlays();
 
   // Additional state
@@ -92,6 +93,7 @@ export default function Dashboard() {
           
           <DisplayRole role={role}/>
 
+          <TaskList />
           {isImposter && <ImposterControls />}
 
           <a href="/logout">

@@ -39,9 +39,17 @@ export function useOverlays(updateInterval = 5000) {
 
   // --- Auto-check status at interval ---
   useEffect(() => {
-    checkStatus();
-    const interval = setInterval(checkStatus, updateInterval);
-    return () => clearInterval(interval);
+    let mounted = true;
+    const run = async () => {
+      if (!mounted) return;
+      await checkStatus();
+    };
+    run();
+    const interval = setInterval(run, updateInterval);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, [checkStatus, updateInterval]);
 
   return {

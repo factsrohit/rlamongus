@@ -1,5 +1,4 @@
 
-import useRole from "../hooks/useRole";
 export default function DisplayRole({role}) {
   
 

@@ -1,7 +1,7 @@
 import { useScore } from "../hooks/useScore";
 
 export default function PlayerScore() {
-  const { score , fetchScore } = useScore();
+  const { score } = useScore();
   return (
     <>
       {score === null || score === undefined ? (

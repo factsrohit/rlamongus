@@ -2,30 +2,21 @@ import { useState, useEffect, useCallback } from "react";
 
 export function useTasks(updateInterval = 5000) {
   const [tasks, setTasks] = useState([]);
-  const [taskStats, setTaskStats] = useState({ total: 0, completed: 0, remaining: 0 });
 
   // --- Fetch tasks from server ---
   const fetchTasks = useCallback(async () => {
     try {
       const res = await fetch("/my-tasks");
       const data = await res.json();
-      if (data.success && Array.isArray(data.tasks)) {
-        setTasks(data.tasks);
-
-        const completed = data.tasks.filter((t) => t.completed).length;
-        setTaskStats({
-          total: data.tasks.length,
-          completed,
-          remaining: data.tasks.length - completed,
-        });
-      }
+      setTasks(data.tasks || []);
     } catch (err) {
       console.error("Failed to fetch tasks:", err);
     }
   }, []);
 
   // --- Submit a task answer ---
-  const submitTask = useCallback(async (taskId, answer) => {
+  const submitTask = useCallback(async (taskId) => {
+    const answer = prompt("Enter your answer for the task:");
     try {
       const res = await fetch("/submit-task", {
         method: "POST",
@@ -45,10 +36,20 @@ export function useTasks(updateInterval = 5000) {
 
   // --- Auto-refresh tasks at interval ---
   useEffect(() => {
-    fetchTasks();
-    const interval = setInterval(fetchTasks, updateInterval);
-    return () => clearInterval(interval);
+    let mounted = true;
+    const run = async () => {
+      if (!mounted) return;
+      await fetchTasks();
+    };
+
+    run();
+    const interval = setInterval(run, updateInterval);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, [fetchTasks, updateInterval]);
 
-  return { tasks, taskStats, refreshTasks: fetchTasks, submitTask };
+
+  return { tasks, refreshTasks: fetchTasks, submitTask };
 }

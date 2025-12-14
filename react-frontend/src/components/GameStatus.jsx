@@ -1,7 +1,7 @@
 
 import { useGameStatus } from '../hooks/useGameStatus';
 function GameStatus() {
-    const { crewmates, imposters, status, loading, error } = useGameStatus();
+    const { crewmates, imposters, error } = useGameStatus();
     
     return (
         <div className="info-box game-status">

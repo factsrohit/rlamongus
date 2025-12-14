@@ -29,11 +29,19 @@ export function useTaskProgress(updateInterval = 5000) {
     }, []);
 
     useEffect(() => {
-        fetchTaskProgress();
-        const interval = setInterval(fetchTaskProgress, updateInterval);
-        return () => clearInterval(interval);
+        let mounted = true;
+        const run = async () => {
+            if (!mounted) return;
+            await fetchTaskProgress();
+        };
+        run();
+        const interval = setInterval(run, updateInterval);
+        return () => {
+            mounted = false;
+            clearInterval(interval);
+        };
     }, [fetchTaskProgress, updateInterval]);
 
-    return { totalTasks, completedTasks, remainingTasks, error, refresh: fetchTaskProgress };
+    return { totalTasks, completedTasks, remainingTasks, loading, error, refresh: fetchTaskProgress };
 }
 

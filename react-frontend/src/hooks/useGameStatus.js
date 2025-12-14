@@ -37,6 +37,6 @@ export function useGameStatus(updateInterval = 5000) {
 		return () => clearInterval(interval);
 	}, [fetchStatus, updateInterval]);
 
-	return { crewmates, imposters, error, refresh: fetchStatus };
+	return { crewmates, imposters, status, loading, error, refresh: fetchStatus };
 }
 

@@ -46,9 +46,17 @@ export function useLocation(updateInterval = 5000) {
 
   // --- Auto-refresh location at interval ---
   useEffect(() => {
-    refreshLocation();
-    const interval = setInterval(refreshLocation, updateInterval);
-    return () => clearInterval(interval);
+    let mounted = true;
+    const run = async () => {
+      if (!mounted) return;
+      await refreshLocation();
+    };
+    run();
+    const interval = setInterval(run, updateInterval);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, [refreshLocation, updateInterval]);
 
   return { location, lastUpdate, refresh : refreshLocation };
