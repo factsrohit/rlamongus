@@ -4,5 +4,8 @@
     "adminPassword": "admin",
     "sessionSecret": "your-secret-key",
     "cooldownTime": 30,
+    "killCooldown": 30,
+    "remoteCooldown": 300,
+    "backstabCooldown": 180,
     "killRange": 7
 }

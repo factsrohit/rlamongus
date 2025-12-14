@@ -776,6 +776,20 @@ app.get('/game-status', async (req, res) => {
     }
 });
 
+// Return cooldown configuration for frontend
+app.get('/cooldowns', (req, res) => {
+    try {
+        res.json({
+            kill: config.killCooldown || config.cooldownTime || 30,
+            remote: config.remoteCooldown || 300,
+            backstab: config.backstabCooldown || 180
+        });
+    } catch (err) {
+        console.error('Error returning cooldowns:', err);
+        res.status(500).json({ error: 'Unable to fetch cooldowns' });
+    }
+});
+
 
 // Check if Admin
 app.get('/check-admin', (req, res) => {

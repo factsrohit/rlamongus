@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-export default function useLeaderboard(updateInterval = 5000) {
+export default function useLeaderboard() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [me, setMe] = useState(null);
   const [topScore, setTopScore] = useState(0);
