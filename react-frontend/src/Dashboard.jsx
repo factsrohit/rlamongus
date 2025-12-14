@@ -12,16 +12,14 @@ import GameStatus from "./components/GameStatus";
 import LocationBox from "./components/LocationBox";
 import TaskProgress from "./components/TaskProgress";
 import DisplayRole from "./components/DisplayRole";
-
+import PlayerScore from "./components/PlayerScore";
 // Custom Hooks
-import { useScore } from "./hooks/useScore";
 import { useRole } from "./hooks/useRole";
 import { useOverlays } from "./hooks/useOverlays";
 import { useAdminControls } from "./hooks/useAdminControls";
 export default function Dashboard() {
   // --- State from hooks ---
   const { role, isImposter, refresh: refreshRole } = useRole();
-  const { score, refresh: refreshScore } = useScore();
 
   const {startGame, endMeeting} = useAdminControls();
   const { 
@@ -90,7 +88,7 @@ export default function Dashboard() {
           
           <GameStatus />
 
-          <p>Score: {score}</p>
+          <PlayerScore />
           
           <DisplayRole role={role}/>
 

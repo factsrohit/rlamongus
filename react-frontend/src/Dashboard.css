@@ -435,10 +435,16 @@
   }
 
   .card {
-  background: #111;
-  padding: 15px;
-  border-radius: 10px;
-  color: #fff;
+    background: rgba(10, 10, 25, 0.8);
+    padding: 12px 14px;
+    border-radius: var(--rounded-md);
+    color: var(--tertiary-neon);
+    font-size: 14px;
+    max-width: 360px;
+    margin: 10px auto;
+    border: 1px solid rgba(0, 255, 153, 0.12);
+    box-shadow: 0 0 10px rgba(0, 255, 153, 0.06);
+    text-align: left;
   }
 
   .task-item {

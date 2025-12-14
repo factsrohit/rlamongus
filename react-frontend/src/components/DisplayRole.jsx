@@ -9,7 +9,7 @@ export default function DisplayRole({role}) {
   };
 
   return (
-    <div className="card" style={{ borderColor: getRoleColor() }}>
+    <div  style={{ borderColor: getRoleColor() }}>
       {role ?(
         <p style={{ fontSize: "1.2rem", fontWeight: "bold", color: getRoleColor() }}>
           Role: {role === "IMPOSTER" ? "🟥 IMPOSTER" : "🟦 CREWMATE"}

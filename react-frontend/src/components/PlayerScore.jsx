@@ -1,17 +1,16 @@
-import React from "react";
+import { useScore } from "../hooks/useScore";
 
-export default function PlayerScore({ score }) {
+export default function PlayerScore() {
+  const { score , fetchScore } = useScore();
   return (
-    <div className="card">
-      <h2>Score</h2>
-
+    <>
       {score === null || score === undefined ? (
         <p>Loading...</p>
       ) : (
         <p style={{ fontSize: "1.2rem", fontWeight: "bold" }}>
-          🏆 {score}
+          Your Current Score 🏆 {score}
         </p>
       )}
-    </div>
+    </>
   );
 }
