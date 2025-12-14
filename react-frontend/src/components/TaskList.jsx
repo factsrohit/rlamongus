@@ -59,7 +59,7 @@ function TaskList() {
   };
 
   return (
-    <div className="card">
+    <div className="info-box task-list">
       <h2>Your Tasks</h2>
 
       {tasks.map((task) => (
