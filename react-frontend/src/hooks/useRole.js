@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 export function useRole(updateInterval = 5000) {
-  const [role, setRole] = useState("Loading...");
+  const [role, setRole] = useState("Loading...Role");
   const [isImposter, setIsImposter] = useState(false);
 
   const fetchRole = async () => {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
-export function useOverlays(updateInterval = 2000) {
+export function useOverlays(updateInterval = 5000) {
   const [winnerVisible, setWinnerVisible] = useState(false);
   const [deadVisible, setDeadVisible] = useState(false);
   const [emergencyVisible, setEmergencyVisible] = useState(false);

@@ -10,22 +10,19 @@ import EmergencyOverlay from "./components/Overlays/EmergencyOverlay";
 import TaskList from "./components/TaskList";
 import GameStatus from "./components/GameStatus";
 import LocationBox from "./components/LocationBox";
+import TaskProgress from "./components/TaskProgress";
+import DisplayRole from "./components/DisplayRole";
 
 // Custom Hooks
-import { useDashboard } from "./hooks/useDashboard";
-import { useTasks } from "./hooks/useTasks";
-
-import { useRole } from "./hooks/useRole";
 import { useScore } from "./hooks/useScore";
-
+import { useRole } from "./hooks/useRole";
 import { useOverlays } from "./hooks/useOverlays";
 import { useAdminControls } from "./hooks/useAdminControls";
 export default function Dashboard() {
   // --- State from hooks ---
   const { role, isImposter, refresh: refreshRole } = useRole();
   const { score, refresh: refreshScore } = useScore();
-  
-  const { tasks, taskStats, refreshTasks, submitTask } = useTasks();
+
   const {startGame, endMeeting} = useAdminControls();
   const { 
     winnerVisible, 
@@ -88,23 +85,14 @@ export default function Dashboard() {
           <h1>Welcome to Real-Life AmongUs</h1>
           
           <LocationBox />
-          
-          <div id="taskProgress" className="info-box">
-            <h3>Task Progress</h3>
-            <p>Total Tasks: {taskStats.total}</p>
-            <p>Completed Tasks: {taskStats.completed}</p>
-            <p>Remaining Tasks: {taskStats.remaining}</p>
-          </div>
 
+          <TaskProgress />
+          
           <GameStatus />
 
-          <p>🕵️‍♂️ Role: {role}</p>
-          <p>🏆 Current Score: {score}</p>
-
-          <div className="info-box">
-            <h3>Your Tasks</h3>
-            <TaskList tasks={tasks} onSubmitAnswer={submitTask} />
-          </div>
+          <p>Score: {score}</p>
+          
+          <DisplayRole role={role}/>
 
           {isImposter && <ImposterControls />}
 

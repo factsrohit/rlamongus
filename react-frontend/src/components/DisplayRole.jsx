@@ -1,6 +1,7 @@
-import React from "react";
 
-export default function DisplayRole({ role }) {
+import useRole from "../hooks/useRole";
+export default function DisplayRole({role}) {
+  
 
   const getRoleColor = () => {
     if (!role) return "#ccc";
@@ -9,11 +10,9 @@ export default function DisplayRole({ role }) {
 
   return (
     <div className="card" style={{ borderColor: getRoleColor() }}>
-      <h2>Role</h2>
-
-      {role ? (
+      {role ?(
         <p style={{ fontSize: "1.2rem", fontWeight: "bold", color: getRoleColor() }}>
-          {role === "IMPOSTER" ? "🟥 IMPOSTER" : "🟦 CREWMATE"}
+          Role: {role === "IMPOSTER" ? "🟥 IMPOSTER" : "🟦 CREWMATE"}
         </p>
       ) : (
         <p>Loading...</p>
