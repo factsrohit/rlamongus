@@ -1,4 +1,5 @@
 {
+    "accesslock": "rlamongus",
     "port": 3000,
     "adminUsername": "admin",
     "adminPassword": "admin",
@@ -8,4 +9,5 @@
     "remoteCooldown": 300,
     "backstabCooldown": 180,
     "killRange": 7
+
 }

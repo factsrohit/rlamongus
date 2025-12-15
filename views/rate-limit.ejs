@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Too Many Attempts</title>
+    <style>
+        body {
+            background: #0b0f1a;
+            color: #ff0055;
+            font-family: monospace;
+            display: flex;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .box {
+            background: #111;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 25px #ff0055;
+            width: 360px;
+        }
+        h1 {
+            color: #ff0055;
+        }
+        p {
+            margin-top: 10px;
+        }
+        .timer {
+            margin-top: 15px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<meta http-equiv="refresh" content="<%= retryAfter %>;url=/site-lock">
+<body>
+    <div class="box">
+        <h1>🚫 ACCESS TEMPORARILY BLOCKED</h1>
+        <p>Too many incorrect access attempts.</p>
+        <div class="timer">
+            Please wait <b><%= retryAfter %></b> seconds before trying again.
+        </div>
+    </div>
+</body>
+</html>
