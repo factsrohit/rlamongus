@@ -62,7 +62,7 @@ cd rlamongus
 npm install
 ```
 #### Install Vite + React for dashboard
-
+-first make sure you are in the correct project path via cd react-frontend from base path
 ```sh
 cd react-frontend
 npm install
