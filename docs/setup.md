@@ -67,8 +67,21 @@ npm install
 cd react-frontend
 npm install
 ```
+### Generate Production Vite Build AT First TIme Install
+-first make sure you are in the correct project path via cd react-frontend from base path
+```sh
+cd react-frontend
+npm run build
+```
 
+### finally start the server 
+```sh 
+node server.js
+```  
+- in the root directory 
 ---
+
+
 
 ## 4. Configuration
 
