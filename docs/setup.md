@@ -39,6 +39,7 @@ rlamongus/
 ├── db.sqlite           # SQLite database (auto-created)
 ├── package.json        # Node.js dependencies
 ├── public/             # Static files (HTML, CSS, JS)
+├── react-frontend/     # All react + Vite DashBoard Files and dependencies
 ├── views/              # EJS templates (error page)
 ├── docs/               # Documentation
 └── ...
@@ -60,14 +61,20 @@ cd rlamongus
 ```sh
 npm install
 ```
+#### Install Vite + React for dashboard
+
+```sh
+cd react-frontend
+npm install
+```
 
 ---
 
 ## 4. Configuration
 
-- **Port:** Default is `3000`. Change in `server.js` if needed.
-- **Session Secret:** Change `'your-secret-key'` in `server.js` for production.
-- **Admin Credentials:** Default username/password is `admin`/`admin`. Change in `server.js` for security.
+- **Port:** Default is `3000`. Change in `config.json` if needed.
+- **Session Secret:** Change `'your-secret-key'` in `config.json` for production.
+- **Admin Credentials:** Default username/password is `admin`/`admin`. Change in `config.json` for security.
 
 ---
 
@@ -108,10 +115,11 @@ Access the game at [http://localhost:3000](http://localhost:3000).
 
 ## 8. Customization
 
-- **Change Port:** Edit `const port = 3000;` in `server.js`.
-- **Change Admin Credentials:** Edit `adminUsername` and `adminPassword` in `server.js`.
+- **Change Port:** Edit `const port = 3000;` in `config.json`.
+- **Change Site Access Password:** edit `accesslock` in config/config.json.
+- **Change Admin Credentials:** Edit `adminUsername` and `adminPassword` in `config.json`.
 - **Add More Tasks:** Use the admin dashboard or POST to `/add-task`.
-- **Change Kill Range/Cooldown:** Edit `KILL_RANGE` and `COOLDOWN_TIME` in `server.js`.
+- **Change Kill Range/Cooldown:** Edit in `config.json`.
 
 ---
 
@@ -130,7 +138,7 @@ A: Use the "Start Game" button in the admin dashboard.
 A: Use the admin dashboard or POST to `/add-task`.
 
 **Q: How do I change the admin password?**  
-A: Edit `server.js` and restart the server.
+A: Edit `config.json` and restart the server.
 
 **Q: Can I run this on a remote server?**  
 A: Yes, but ensure port 3000 is open and update session secret for security.
