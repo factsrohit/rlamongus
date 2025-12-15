@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Site Locked</title>
+    <style>
+        body {
+            background: #0b0f1a;
+            color: #0ff;
+            font-family: monospace;
+            display: flex;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+        }
+        .lock-box {
+            background: #111;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px #0ff;
+            width: 320px;
+            text-align: center;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            background: black;
+            color: #0ff;
+            border: 1px solid #0ff;
+            margin-top: 15px;
+        }
+        button {
+            margin-top: 15px;
+            width: 100%;
+            padding: 10px;
+            background: #0ff;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="lock-box">
+        <h2>🔒 SITE LOCKED</h2>
+
+        <form method="POST" action="/verify-site-access">
+            <input
+                type="password"
+                name="lock"
+                placeholder="Access key"
+                required
+                autofocus
+            />
+            <button type="submit">Unlock</button>
+        </form>
+
+        <% if (error) { %>
+            <div class="error"><%= error %></div>
+        <% } %>
+    </div>
+</body>
+</html>

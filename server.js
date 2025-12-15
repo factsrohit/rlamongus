@@ -1,5 +1,6 @@
 
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
@@ -8,6 +9,7 @@ const path = require('path');
 const { promisify } = require('util');
 
 const app = express();
+app.set('trust proxy', 1);
 
 const config = require('./config/config.json');
 const port = config.port || 3000;
@@ -194,7 +196,7 @@ function isAuthenticated(req, res, next) {
     if (req.session.username) return next();
     res.redirect('/');
 }
-
+//admin check middleware
 function isemAdmin(req, res, next) {
     if (req.session.username === adminUsername) {
         next();
@@ -203,13 +205,102 @@ function isemAdmin(req, res, next) {
     }
 }
 
+/* site access locking mechanism start */
+
+const lockLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res, next, options) => {
+        const retryAfter =
+            Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000);
+
+        return res.status(429).render('rate-limit', {
+            retryAfter
+        });
+    }
+});
+
+const accessLock = config.accesslock || null;
+
+function siteLockMiddleware(req, res, next) {
+    if (!accessLock) return next(); // No lock configured
+
+    // Allow lock-related routes
+    if (
+        req.path === '/site-lock' ||
+        req.path === '/verify-site-access'
+    ) {
+        return next();
+    }
+
+    // Allow static assets
+    if (
+        req.path.startsWith('/public') ||
+        req.path.startsWith('/assets') ||
+        req.path.startsWith('/css') ||
+        req.path.startsWith('/js')
+    ) {
+        return next();
+    }
+
+    // Already verified
+    if (req.session.siteVerified === true) {
+        return next();
+    }
+
+    // Block everything else
+    return res.redirect('/site-lock');
+}
+
+app.use(siteLockMiddleware);
+
+/* Lock page */
+app.get('/site-lock', (req, res) => {
+    res.render('site-lock', {
+        error: null
+    });
+});
+
+/* Verify endpoint (rate-limited) */
+app.post('/verify-site-access', lockLimiter, (req, res) => {
+    const lock = String(req.body.lock || '').trim();
+
+    if (lock !== accessLock) {
+        return res.status(401).render('site-lock', {
+            error: "Invalid access key"
+        });
+    }
+
+    req.session.siteVerified = true;
+    res.redirect('/');
+});
+
+/* site access locking mechanism end */
 
 
 // Root route
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
 
+//site access verification route
+app.post('/verify-site-access',lockLimiter, (req, res) => {
+    const accessLock = config.accesslock || null;
+    const lock = String(req.body.lock || '').trim();
+
+    if (lock !== accessLock) {
+        return res.status(401).render('site-lock', {
+            error: "Invalid access key"
+        });
+    }
+
+    req.session.siteVerified = true;
+    res.redirect('/');
+});
+
+
 // Register route
-app.post('/register', async (req, res) => {
+app.post('/register',async (req, res) => {
     try {
         let { username, password } = req.body;
         username = String(username || '').trim();
@@ -252,15 +343,16 @@ app.post('/register', async (req, res) => {
         req.session.username = username;
         if (newUser && newUser.id) req.session.userId = newUser.id;
 
-        res.redirect('/dashboard.html');
+        res.redirect('*');
     } catch (err) {
         console.error("Error registering user:", err);
         res.render('error', { message: "Error registering user. Please try again." });
     }
 });
 
+
 // Login route
-app.post('/login', async (req, res) => {
+app.post('/login',async (req, res) => {
     const { username, password } = req.body;
 
     try {
@@ -277,7 +369,7 @@ app.post('/login', async (req, res) => {
         if (match) {
             req.session.username = username;
             req.session.userId = user.id;
-            res.redirect('/dashboard.html');
+            res.redirect('*');
         } else {
             res.render('error', { message: "Invalid password. Please try again." });
         }
@@ -293,6 +385,7 @@ app.get('/logout', (req, res) => {
     req.session.destroy(() => res.redirect('/'));
 });
 
+
 // Dashboard route
 app.get('/dashboard', isAuthenticated, (req, res) => {
     res.sendFile(__dirname + '/public/dashboard.html');
@@ -305,10 +398,13 @@ app.post('/clear-users', async (req, res) => {
     try {
         await db.runAsync(`DELETE FROM users WHERE username != ?`, [adminUsername]);
         await db.runAsync(`DELETE FROM locations WHERE username != ?`, [adminUsername]);
-        res.send("All users (except admin) have been deleted");
+        res.json({ success: true, message: "All users (except admin) have been deleted" });
     } catch (err) {
         console.error("Error clearing users:", err);
-        res.status(500).send("Error clearing users");
+        res.status(500).json({
+        success: false,
+        message: "Error clearing users"
+        });
     }
 });
 
@@ -327,10 +423,10 @@ app.post('/update-location', async (req, res) => {
              SET latitude = excluded.latitude, longitude = excluded.longitude`,
             [username, latitude, longitude]
         );
-        res.send("Location updated");
+        res.json({success: true, message: "Location updated"});
     } catch (err) {
         console.error("Database error:", err);
-        res.status(500).send("Error updating location");
+        res.status(500).json({success: false, message: "Error updating location"});
     }
 });
 
@@ -771,6 +867,20 @@ app.get('/game-status', async (req, res) => {
     }
 });
 
+// Return cooldown configuration for frontend
+app.get('/cooldowns', (req, res) => {
+    try {
+        res.json({
+            kill: config.killCooldown || config.cooldownTime || 30,
+            remote: config.remoteCooldown || 300,
+            backstab: config.backstabCooldown || 180
+        });
+    } catch (err) {
+        console.error('Error returning cooldowns:', err);
+        res.status(500).json({ error: 'Unable to fetch cooldowns' });
+    }
+});
+
 
 // Check if Admin
 app.get('/check-admin', (req, res) => {
@@ -833,10 +943,18 @@ app.post('/start-game', async (req, res) => {
 
         winnerAwarded = false;
 
-        res.send("Game started: All players reset, new tasks assigned, settings updated.");
+        
+        res.json({
+        success: true,
+        message: "Game started: All players reset, new tasks assigned, settings updated."
+        });
+
     } catch (err) {
         console.error("Error in /start-game:", err);
-        res.status(500).send("Failed to start game.");
+        res.status(500).json({
+        success: false,
+        message: "Failed to start game."
+        });
     }
 });
 
@@ -971,10 +1089,14 @@ app.post('/add-task', isemAdmin, async (req, res) => {
     try {
         const { question, answer, hint } = req.body;
         await db.runP(`INSERT INTO tasks (question, answer, hint) VALUES (?, ?, ?)`, [question, answer, hint]);
-        res.send("Task added successfully.");
+        res.json({ success: true, message: "Task added successfully." });
+
     } catch (err) {
         console.error("Error adding task:", err);
-        res.status(500).send("Failed to add task.");
+        res.status(500).json({
+        success: false,
+        message: "Failed to add task."
+        });
     }
 });
 
@@ -1282,6 +1404,15 @@ app.get('/leaderboard-rankings', isAuthenticated, async (req, res) => {
     }
 });
 
+
+
+// Serve React build folder
+app.use(express.static(path.join(__dirname, "react-frontend/dist")));
+
+// Fallback for SPA routing
+app.get("*", isAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, "react-frontend/dist", "index.html"));
+});
 
 
 // Start server
