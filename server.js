@@ -15,17 +15,17 @@ const config = require('./config/config.json');
 const port = config.port || 3000;
 const adminUsername = config.adminUsername || 'admin';
 const adminPassword = config.adminPassword || 'admin';
-const COOLDOWN_TIME = config.cooldownTime || 30; // seconds
-const KILL_RANGE = config.killRange || 7; // meters
+const COOLDOWN_TIME = config.cooldownTime || 30; /* seconds */
+const KILL_RANGE = config.killRange || 7; /* meters */
 let winnerAwarded = false;
 
-// Set up database
+/*------------------------------- Set Up DataBase ---------------------------------*/
 const db = new sqlite3.Database('db.sqlite', (err) => {
     if (err) console.error(err.message);
     console.log("Connected to SQLite database.");
 });
 
-// --- Convert to Promise-based API ---
+/*---------- Convert to Promise-based API --------------*/
 db.runAsync = promisify(db.run).bind(db);
 db.getAsync = promisify(db.get).bind(db);
 db.allAsync = promisify(db.all).bind(db);
@@ -36,10 +36,10 @@ db.allP = promisify(db.all).bind(db);
 db.execP = promisify(db.exec).bind(db);
 db.prepareP = promisify(db.prepare).bind(db);
 
-// --- Initialize tables & defaults ---
+/* -------- Initialize tables & defaults ----------*/
 async function initDB() {
     try {
-        // Create users table
+        /* Create users table */
         await db.runAsync(`
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,12 +51,12 @@ async function initDB() {
             );
         `);
 
-        // Ensure default admin user
+        /* Ensure default admin user */
         try {
             const hash = await bcrypt.hash(adminPassword, 10);
-            // Delete any existing admin
+            /* Delete any existing admin */
             await db.runAsync(`DELETE FROM users WHERE username = ?`, [adminUsername]);
-            // Insert fresh admin
+            /* Insert fresh admin */
             await db.runAsync(
                 `INSERT INTO users (username, password, role) VALUES (?, ?, 'IMPOSTER')`,
                 [adminUsername, hash]
@@ -68,7 +68,7 @@ async function initDB() {
         }
 
 
-        // Create locations table
+        /* Create locations table */
         await db.runAsync(`
             CREATE TABLE IF NOT EXISTS locations (
                 username TEXT PRIMARY KEY,
@@ -77,7 +77,7 @@ async function initDB() {
             );
         `);
 
-        // Create tasks table
+        /* Create tasks table */
         await db.runAsync(`
             CREATE TABLE IF NOT EXISTS tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,7 +87,7 @@ async function initDB() {
             );
         `);
 
-        // Insert default task if none exist
+        /* Insert default task if none exist */
         const taskRow = await db.getAsync(`SELECT 1 FROM tasks LIMIT 1`);
         if (!taskRow) {
             await db.runAsync(
@@ -101,12 +101,9 @@ async function initDB() {
     }
 }
 
-// Call init
-initDB();
-
 async function initExtraTables() {
     try {
-        // Create votes table
+        /* Create votes table */
         await db.runAsync(`
             CREATE TABLE IF NOT EXISTS votes (
                 voter INTEGER PRIMARY KEY,
@@ -114,7 +111,7 @@ async function initExtraTables() {
             );
         `);
 
-        // Create settings table
+        /* Create settings table */
         await db.runAsync(`
             CREATE TABLE IF NOT EXISTS settings (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -124,10 +121,10 @@ async function initExtraTables() {
             );
         `);
 
-        // Insert default settings row if not exists
+        /* Insert default settings row if not exists */
         await db.runAsync(`INSERT OR IGNORE INTO settings (id) VALUES (1);`);
 
-        // Create player_tasks table
+        /* Create player_tasks table */
         await db.runAsync(`
             CREATE TABLE IF NOT EXISTS player_tasks (
                 username TEXT NOT NULL,
@@ -150,23 +147,26 @@ async function initExtraDB() {
         console.error("DB Init Error:", err);
     }
 }
+
+/* Call init */
+initDB();
 initExtraDB();
 
 
 
-// JavaScript Haversine Function
+/*---------------JavaScript Haversine Function------------*/
 function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371000; // Earth radius in meters
+    const R = 6371000; /* Earth radius in meters */
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
         Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance in meters
+    return R * c; /* Distance in meters */
 }
 
-// Clear all locations (Promise-based)
+/*----------Clear all locations of Previous Match from the DataBase--------------*/
 async function clearLocationData() {
     try {
         await db.runAsync("DELETE FROM locations");
@@ -176,7 +176,8 @@ async function clearLocationData() {
     }
 }
 
-// Middleware
+
+/*------------------app Middlewares-----------------*/
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
@@ -185,18 +186,21 @@ app.use(session({
     saveUninitialized: true
 }));
 
-app.use(express.static('public')); // Serve static files (HTML, JS)
+// Serve static files (HTML, JS)
+app.use(express.static('public')); 
 
 // Set EJS as the templating engine
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views')); // Store templates in 'views'
 
-// Authentication Middleware
+// Store templates in 'views'
+app.set('views', path.join(__dirname, 'views')); 
+
+/*--------------------- Authentication Middleware ---------------------*/
 function isAuthenticated(req, res, next) {
     if (req.session.username) return next();
     res.redirect('/');
 }
-//admin check middleware
+/*----------------------- Admin Check Middleware -----------------------*/
 function isemAdmin(req, res, next) {
     if (req.session.username === adminUsername) {
         next();
@@ -205,10 +209,13 @@ function isemAdmin(req, res, next) {
     }
 }
 
-/* site access locking mechanism start */
 
+
+/*--------------------------------------- Site Access locking Mechanism Start------------------------------------*/
+
+/*rate limiter for server access lock verification*/
 const lockLimiter = rateLimit({
-    windowMs: 5 * 60 * 1000, // 5 minutes
+    windowMs: 5 * 60 * 1000, /* 5 minutes */
     max: 5,
     standardHeaders: true,
     legacyHeaders: false,
@@ -222,12 +229,12 @@ const lockLimiter = rateLimit({
     }
 });
 
-const accessLock = config.accesslock || null;
+const accessLock = config.accesslock || null; /* site access lock from config */ 
 
 function siteLockMiddleware(req, res, next) {
-    if (!accessLock) return next(); // No lock configured
+    if (!accessLock) return next(); /* No lock configured */
 
-    // Allow lock-related routes
+    /* Allow lock-related routes */
     if (
         req.path === '/site-lock' ||
         req.path === '/verify-site-access'
@@ -235,7 +242,7 @@ function siteLockMiddleware(req, res, next) {
         return next();
     }
 
-    // Allow static assets
+    /* Allow static assets */
     if (
         req.path.startsWith('/public') ||
         req.path.startsWith('/assets') ||
@@ -245,16 +252,17 @@ function siteLockMiddleware(req, res, next) {
         return next();
     }
 
-    // Already verified
+    /* Already verified */
     if (req.session.siteVerified === true) {
         return next();
     }
 
-    // Block everything else
+    /* Block everything else */
     return res.redirect('/site-lock');
 }
 
 app.use(siteLockMiddleware);
+
 
 /* Lock page */
 app.get('/site-lock', (req, res) => {
@@ -262,6 +270,7 @@ app.get('/site-lock', (req, res) => {
         error: null
     });
 });
+
 
 /* Verify endpoint (rate-limited) */
 app.post('/verify-site-access', lockLimiter, (req, res) => {
@@ -277,13 +286,15 @@ app.post('/verify-site-access', lockLimiter, (req, res) => {
     res.redirect('/');
 });
 
-/* site access locking mechanism end */
+/*---------------------------site access locking mechanism end-------------------------------------*/
 
 
-// Root route
+/*---------------------------ALL ROUTES START HERE--------------------------------------------------*/
+
+/*------------------- Root route -------------------*/
 app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
 
-//site access verification route
+/*----------------------- Site Access Verification Route -----------------------*/ 
 app.post('/verify-site-access',lockLimiter, (req, res) => {
     const accessLock = config.accesslock || null;
     const lock = String(req.body.lock || '').trim();
@@ -299,14 +310,14 @@ app.post('/verify-site-access',lockLimiter, (req, res) => {
 });
 
 
-// Register route
+/*-------------------------- Register route --------------------------*/
 app.post('/register',async (req, res) => {
     try {
         let { username, password } = req.body;
         username = String(username || '').trim();
         password = String(password || '');
 
-        // Basic validation
+        /* Basic validation */
         if (!username || !password) {
             return res.render('error', { message: "Username and password are required." });
         }
@@ -316,30 +327,30 @@ app.post('/register',async (req, res) => {
         if (password.length < 6) {
             return res.render('error', { message: "Password must be at least 6 characters." });
         }
-        // Prevent registering as admin
+        /* Prevent registering as admin */
         if (username === adminUsername) {
             return res.render('error', { message: "This username is reserved." });
         }
 
-        // Check if user already exists
+        /* Check if user already exists */
         const existing = await db.getAsync(`SELECT id FROM users WHERE username = ?`, [username]);
         if (existing) {
             return res.render('error', { message: "User already exists. Please choose another username." });
         }
 
-        // Hash password
+        /* Hash password */
         const hash = await bcrypt.hash(password, 10);
 
-        // Insert into DB
+        /* Insert into DB */
         await db.runAsync(
             `INSERT INTO users (username, password, role) VALUES (?, ?, 'DEAD')`,
             [username, hash]
         );
 
-        // Retrieve new user's id
+        /* Retrieve new user's id */
         const newUser = await db.getAsync(`SELECT id FROM users WHERE username = ?`, [username]);
 
-        // Set session and redirect
+        /* Set session and redirect */
         req.session.username = username;
         if (newUser && newUser.id) req.session.userId = newUser.id;
 
@@ -351,19 +362,19 @@ app.post('/register',async (req, res) => {
 });
 
 
-// Login route
+/*----------------------------- Login route -----------------------------*/
 app.post('/login',async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        // Fetch user from DB
+        /* Fetch user from DB */
         const user = await db.getAsync("SELECT * FROM users WHERE username = ?", [username]);
 
         if (!user) {
             return res.render('error', { message: "User not found. Please register first." });
         }
 
-        // Compare password
+        /* Compare password */
         const match = await bcrypt.compare(password, user.password);
 
         if (match) {
@@ -380,18 +391,20 @@ app.post('/login',async (req, res) => {
     }
 });
 
-// Logout route
+/*-------------------------- Logout route --------------------------*/
 app.get('/logout', (req, res) => {
     req.session.destroy(() => res.redirect('/'));
 });
 
 
-// Dashboard route
+/* --------------------------- Dashboard route --------------------------- */
 app.get('/dashboard', isAuthenticated, (req, res) => {
     res.sendFile(__dirname + '/public/dashboard.html');
 });
 
-// Clear all users except admin
+
+
+/*------------------------ Clear all users except admin ------------------------*/
 app.post('/clear-users', async (req, res) => {
     if (req.session.username !== adminUsername) return res.status(403).send("Access Denied");
 
@@ -408,7 +421,7 @@ app.post('/clear-users', async (req, res) => {
     }
 });
 
-// Update player location
+/*----------------------------- Update player location -----------------------------*/
 app.post('/update-location', async (req, res) => {
     const { latitude, longitude } = req.body;
     const username = req.session.username;
@@ -430,7 +443,8 @@ app.post('/update-location', async (req, res) => {
     }
 });
 
-// Get player location
+/*---------------------------------- Get player location ----------------------------------*/
+
 app.get('/get-location', async (req, res) => {
     const username = req.session.username;
 
@@ -444,19 +458,20 @@ app.get('/get-location', async (req, res) => {
 
         if (!row) return res.send({ latitude: null, longitude: null });
 
-        res.send(row); // JSON response with { latitude, longitude }
+        res.send(row); /* JSON response with { latitude, longitude } */
     } catch (err) {
         console.error("Database error:", err);
         res.status(500).send("Error fetching location");
     }
 });
-// Nearby players
+
+/*------------------------------ Nearby players -------------------------------*/
 app.get('/nearby-players', isAuthenticated, async (req, res) => {
     const username = req.session.username;
     if (!username) return res.status(401).send("Not logged in");
 
     try {
-        // Get current player location
+        /* Get current player location */
         const player = await db.getAsync(
             `SELECT latitude, longitude FROM locations WHERE username = ?`,
             [username]
@@ -465,7 +480,7 @@ app.get('/nearby-players', isAuthenticated, async (req, res) => {
 
         const { latitude, longitude } = player;
 
-        // Get all other alive players
+        /* Get all other alive players */
         const rows = await db.allAsync(`
             SELECT locations.username, latitude, longitude
             FROM locations
@@ -473,7 +488,7 @@ app.get('/nearby-players', isAuthenticated, async (req, res) => {
             WHERE locations.username != ? AND users.role != 'DEAD'
         `, [username]);
 
-        // Filter within 7m
+        /* Filter within 7m */
         const nearbyPlayers = rows.filter(other =>
             getDistance(latitude, longitude, other.latitude, other.longitude) <= 7
         );
@@ -488,7 +503,7 @@ app.get('/nearby-players', isAuthenticated, async (req, res) => {
     }
 });
 
-// All imposters
+/*------------------------------ List of All imposters -------------------------------*/
 app.get('/all-imposters', isAuthenticated, async (req, res) => {
     const username = req.session.username;
     if (!username) return res.status(401).send("Not logged in");
@@ -504,7 +519,8 @@ app.get('/all-imposters', isAuthenticated, async (req, res) => {
         res.json({ count: 0, imposters: [] });
     }
 });
-//kill route
+/*-------------------------- Kill route --------------------------*/
+/*---------------------------- Initial CallBack Based Implementation ----------------------------*/
 /*
 app.post('/kill', isAuthenticated, (req, res) => {
     const username = req.session.username;
@@ -626,12 +642,14 @@ app.post('/kill', isAuthenticated, (req, res) => {
         });
     });
 });*/
+
+/*---------------------------- Refactored Promise-based Implementation ----------------------------*/
 app.post('/kill', isAuthenticated, async (req, res) => {
     const username = req.session.username;
     const now = Math.floor(Date.now() / 1000);
 
     try {
-        // 1. Check if emergency meeting is active
+        /* 1. Check if emergency meeting is active */
         const settings = await db.getAsync(`SELECT emergency_meeting FROM settings`);
         if (settings && settings.emergency_meeting) {
             return res.status(403).json({
@@ -640,7 +658,7 @@ app.post('/kill', isAuthenticated, async (req, res) => {
             });
         }
 
-        // 2. Verify killer
+        /* 2. Verify killer */
         const user = await db.getAsync(
             `SELECT role, last_kill_time FROM users WHERE username = ?`,
             [username]
@@ -657,7 +675,7 @@ app.post('/kill', isAuthenticated, async (req, res) => {
             return res.status(403).json({ success: false, message: "Kill on cooldown" });
         }
 
-        // 3. Get imposter location
+        /* 3. Get imposter location */
         const imposter = await db.getAsync(
             `SELECT latitude, longitude FROM locations WHERE username = ?`,
             [username]
@@ -666,7 +684,7 @@ app.post('/kill', isAuthenticated, async (req, res) => {
             return res.status(500).json({ success: false, message: "Error fetching location" });
         }
 
-        // 4. Find nearest crewmate in range
+        /* 4. Find nearest crewmate in range */
         const victim = await db.getAsync(
             `
             SELECT users.username, latitude, longitude,
@@ -696,10 +714,10 @@ app.post('/kill', isAuthenticated, async (req, res) => {
             return res.status(404).json({ success: false, message: "No crewmates in range" });
         }
 
-        // 5. Mark victim as DEAD
+        /* 5. Mark victim as DEAD */
         await db.runAsync(`UPDATE users SET role = 'DEAD' WHERE username = ?`, [victim.username]);
         increaseScore(username, 2); // Increase killer's score by 2;
-        // 6. Get victim’s unfinished tasks
+        /* 6. Get victim’s unfinished tasks */
         const tasks = await db.allAsync(
             `SELECT task_id FROM player_tasks WHERE username = ? AND completed = 0`,
             [victim.username]
@@ -726,7 +744,7 @@ app.post('/kill', isAuthenticated, async (req, res) => {
                     i++;
                 }
 
-                // Remove victim’s unfinished tasks
+                /* Remove victim’s unfinished tasks */
                 await db.runAsync(
                     `DELETE FROM player_tasks WHERE username = ? AND completed = 0`,
                     [victim.username]
@@ -734,7 +752,7 @@ app.post('/kill', isAuthenticated, async (req, res) => {
             }
         }
 
-        // 7. Update killer cooldown
+        /* 7. Update killer cooldown */
         await db.runAsync(
             `UPDATE users SET last_kill_time = ? WHERE username = ?`,
             [now, username]
@@ -757,7 +775,7 @@ app.post('/kill', isAuthenticated, async (req, res) => {
 
 
 
-// Remote Kill route
+/*--------------------------------------- Remote Kill Route -----------------------------------*/ 
 app.post('/kill-remote', isAuthenticated, async (req, res) => {
     const killer = req.session.username;
     const target = req.body.target?.trim();
@@ -766,21 +784,21 @@ app.post('/kill-remote', isAuthenticated, async (req, res) => {
         return res.status(400).json({ success: false, message: "Target username required" });
 
     try {
-        // --- Check killer is imposter ---
+        /* --- Check killer is imposter --- */
         const user = await db.getAsync(`SELECT role FROM users WHERE username = ?`, [killer]);
         if (!user || user.role !== 'IMPOSTER')
             return res.status(403).json({ success: false, message: "Only imposters can remote kill" });
 
-        // --- Validate target ---
+        /* --- Validate target --- */
         const victim = await db.getAsync(`SELECT role FROM users WHERE username = ?`, [target]);
         if (!victim) return res.status(404).json({ success: false, message: "Target not found" });
         if (victim.role !== 'CREWMATE') return res.status(400).json({ success: false, message: "Target must be a crewmate" });
 
-        // --- Kill the target ---
+        /* --- Kill the target --- */
         await db.runAsync(`UPDATE users SET role = 'DEAD' WHERE username = ?`, [target]);
         console.log(`${killer} remotely killed ${target}`);
 
-        // --- Reassign victim's incomplete tasks ---
+        /* --- Reassign victim's incomplete tasks --- */
         const tasks = await db.allAsync(`SELECT task_id FROM player_tasks WHERE username = ? AND completed = 0`, [target]);
         const deadTasks = tasks.map(t => t.task_id);
 
@@ -814,7 +832,7 @@ WHERE task_id IN (
 )
 AND username = ?`, [target, deadTasks.length - alloted, target]
         );
-        increaseScore(killer, 2); // Increase killer's score by 2;
+        increaseScore(killer, 2); /* Increase killer's score by 2 */
         res.json({ success: true, message: `${target} has been remotely killed.` });
     } catch (err) {
         console.error("Remote kill error:", err);
@@ -824,7 +842,9 @@ AND username = ?`, [target, deadTasks.length - alloted, target]
 
 
 
-// Get Dashboard Stats
+/*--------------------------------------- Current Game Stats here -----------------------------------*/
+
+/*----------------------- Duplicate of statboard route -----------------------*/
 app.get('/statboard', isAuthenticated, async (req, res) => {
     try {
         const rows = await db.allP(`SELECT role, COUNT(*) AS count FROM users GROUP BY role`);
@@ -850,8 +870,7 @@ app.get('/statboard', isAuthenticated, async (req, res) => {
     }
 });
 
-
-// Game Status
+/*--------------------------------- Game Status (Crewmates vs Imposters) ---------------------------------*/
 app.get('/game-status', async (req, res) => {
     try {
         const crewmatesRow = await db.getP(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`);
@@ -867,7 +886,7 @@ app.get('/game-status', async (req, res) => {
     }
 });
 
-// Return cooldown configuration for frontend
+/* ------------------------------- Return cooldown configuration for frontend ------------------------------- */
 app.get('/cooldowns', (req, res) => {
     try {
         res.json({
@@ -882,31 +901,33 @@ app.get('/cooldowns', (req, res) => {
 });
 
 
-// Check if Admin
+/*----------------------- Check if Admin -----------------------*/
 app.get('/check-admin', (req, res) => {
     res.json({ isAdmin: req.session.username === adminUsername });
 });
-// Start Game
+
+/*------------------------------  Start Game Route ------------------------------*/
+
 app.post('/start-game', async (req, res) => {
     try {
-        const numTasks = parseInt(req.body.numTasks) || 4; // default 4
+        const numTasks = parseInt(req.body.numTasks) || 4; /* default 4 */
 
-        // Step 1: Reset roles
+        /* Step 1: Reset roles */
         await db.runP(`UPDATE users SET role = 'CREWMATE' WHERE username != ?`, [adminUsername]);
 
-        // Step 2: Clear old tasks
+        /* Step 2: Clear old tasks */
         await db.runP(`DELETE FROM player_tasks`);
 
-        // Step 3: Get all players (excluding admin)
+        /* Step 3: Get all players (excluding admin) */
         const players = await db.allP(`SELECT username FROM users WHERE username != ?`, [adminUsername]);
 
-        // Step 4: Get all available tasks
+        /* Step 4: Get all available tasks */
         const allTasks = await db.allP(`SELECT id FROM tasks`);
         if (!allTasks.length) {
             return res.status(400).send("No tasks available in the pool.");
         }
 
-        // Step 4.1: Assign random tasks to each player
+        /* Step 4.1: Assign random tasks to each player */
         const insertStmt = db.prepare(`INSERT INTO player_tasks (username, task_id, completed) VALUES (?, ?, 0)`);
         for (const player of players) {
             for (let i = 0; i < numTasks; i++) {
@@ -919,7 +940,7 @@ app.post('/start-game', async (req, res) => {
             insertStmt.finalize(err => (err ? reject(err) : resolve()));
         });
 
-        // Step 5: Update or insert settings
+        /* Step 5: Update or insert settings */
         const row = await db.getP(`SELECT id FROM settings ORDER BY id DESC LIMIT 1`);
         if (row) {
             await db.runP(`UPDATE settings SET tasks_per_player = ? WHERE id = ?`, [numTasks, row.id]);
@@ -927,11 +948,11 @@ app.post('/start-game', async (req, res) => {
             await db.runP(`INSERT INTO settings (tasks_per_player) VALUES (?)`, [numTasks]);
         }
 
-        // Reset winner award flag for the new game
-        // Compute and save the task target based on players and tasks per player
+        /* Reset winner award flag for the new game */
+        /* Compute and save the task target based on players and tasks per player */
         try {
             const taskTarget = Math.ceil(players.length * numTasks * 0.8);
-            // Save to settings table
+            /* Save to settings table */
             await db.runP(
                 `UPDATE settings SET task_target = ? WHERE id = (SELECT id FROM settings ORDER BY id DESC LIMIT 1)`,
                 [taskTarget]
@@ -959,7 +980,8 @@ app.post('/start-game', async (req, res) => {
 });
 
 
-// Get Role
+/*-------------------------------- Get Role of Current User --------------------------------*/
+
 app.get('/getRole', isAuthenticated, async (req, res) => {
     try {
         const username = req.session.username;
@@ -974,7 +996,9 @@ app.get('/getRole', isAuthenticated, async (req, res) => {
         res.json({ success: false, message: "Error fetching role" });
     }
 });
-// Start Emergency Meeting (Admin Only)
+
+
+/* ------------------------------ Start Emergency Meeting (Admin Only) ------------------------------ */
 app.post('/startmeet', isemAdmin, async (req, res) => {
     try {
         await db.runP(`UPDATE settings SET emergency_meeting = 1`);
@@ -985,14 +1009,14 @@ app.post('/startmeet', isemAdmin, async (req, res) => {
     }
 });
 
-// End Emergency Meeting (Admin Only)
+/* --------------------------------- End Emergency Meeting (Admin Only) --------------------------------- */
 app.post('/endmeet', isemAdmin, async (req, res) => {
     try {
-        // Get alive players
+        /* Get alive players */
         const players = await db.allP(`SELECT id FROM users WHERE role != 'DEAD'`);
         const aliveIds = players.map(p => p.id);
 
-        // Get votes
+        /* Get votes */
         const votes = await db.allP(`SELECT voter, vote_for FROM votes`);
 
         const tally = {};
@@ -1004,13 +1028,13 @@ app.post('/endmeet', isemAdmin, async (req, res) => {
             tally[vote] = (tally[vote] || 0) + 1;
         }
 
-        // Add implicit SKIPs
+        /* Add implicit SKIPs */
         const missingVotes = aliveIds.filter(id => !votedPlayers.has(id));
         for (let missing of missingVotes) {
             tally['SKIP'] = (tally['SKIP'] || 0) + 1;
         }
 
-        // Find top-voted (excluding SKIP)
+        /* Find top-voted (excluding SKIP) */
         let maxVotes = 0;
         let ejectedPlayerId = null;
         for (let [targetId, count] of Object.entries(tally)) {
@@ -1022,7 +1046,7 @@ app.post('/endmeet', isemAdmin, async (req, res) => {
 
         const skipCount = tally['SKIP'] || 0;
 
-        // If SKIP wins or no one was voted
+        /* If SKIP wins or no one was voted */
         if (!ejectedPlayerId || skipCount >= maxVotes) {
             await db.runP(`DELETE FROM votes`);
             await db.runP(`UPDATE settings SET emergency_meeting = 0`);
@@ -1034,7 +1058,7 @@ app.post('/endmeet', isemAdmin, async (req, res) => {
             });
         }
 
-        // Someone is ejected
+        /* Someone is ejected */
         const user = await db.getP(`SELECT username, role FROM users WHERE id = ?`, [ejectedPlayerId]);
         if (!user) {
             return res.status(500).json({ success: false, message: "Ejected player not found" });
@@ -1057,7 +1081,7 @@ app.post('/endmeet', isemAdmin, async (req, res) => {
     }
 });
 
-// Check if meeting is active
+/* ------------------- Check if meeting is active ------------------- */
 app.get('/statusmeet', async (req, res) => {
     try {
         const row = await db.getP(`SELECT emergency_meeting FROM settings`);
@@ -1068,7 +1092,8 @@ app.get('/statusmeet', async (req, res) => {
     }
 });
 
-// Request Hint
+/*-------------------- Request Hint For Tasks --------------------*/
+
 app.post('/request-hint', isAuthenticated, async (req, res) => {
     try {
         const { taskId } = req.body;
@@ -1084,7 +1109,7 @@ app.post('/request-hint', isAuthenticated, async (req, res) => {
     }
 });
 
-// Add Task (Admin Only)
+/* ------------------------------------- Add a new Task to the Task Pool (Admin Only) ------------------------------------- */
 app.post('/add-task', isemAdmin, async (req, res) => {
     try {
         const { question, answer, hint } = req.body;
@@ -1100,7 +1125,7 @@ app.post('/add-task', isemAdmin, async (req, res) => {
     }
 });
 
-// Get All Tasks
+/* ------------------------------------- Get All Tasks ------------------------------------- */
 app.get('/tasks', async (req, res) => {
     try {
         const tasks = await db.allP("SELECT * FROM tasks");
@@ -1111,13 +1136,13 @@ app.get('/tasks', async (req, res) => {
     }
 });
 
-// Assign Tasks to Player
+/* ---------------------------- Assign Tasks to Player ---------------------------- */
 app.post('/assign-tasks', async (req, res) => {
     try {
         const { username } = req.body;
         if (!username) return res.status(400).send("Username is required.");
 
-        const tasks = await assignTasksToPlayer(username); // Make sure this function returns a Promise
+        const tasks = await assignTasksToPlayer(username); /* Make sure this function returns a Promise */
         res.json({ message: "Tasks assigned.", tasks });
     } catch (err) {
         console.error("Error assigning tasks:", err);
@@ -1125,7 +1150,7 @@ app.post('/assign-tasks', async (req, res) => {
     }
 });
 
-// Get My Tasks
+/*------------------------------------- Get My Tasks -------------------------------------*/
 app.get('/my-tasks', isAuthenticated, async (req, res) => {
     try {
         const username = req.session.username;
@@ -1143,7 +1168,7 @@ app.get('/my-tasks', isAuthenticated, async (req, res) => {
     }
 });
 
-// Submit Task
+/* ------------------------------- Submit Task ------------------------------- */
 app.post('/submit-task', isAuthenticated, async (req, res) => {
     try {
         const username = req.session.username;
@@ -1156,7 +1181,7 @@ app.post('/submit-task', isAuthenticated, async (req, res) => {
 
         if (task.answer.toLowerCase() === answer.toLowerCase()) {
             await db.runP(`UPDATE player_tasks SET completed = 1 WHERE username = ? AND task_id = ?`, [username, taskId]);
-            increaseScore(username, 1); // Increase score by 1 for completing a task
+            increaseScore(username, 1); /* Increase score by 1 for completing a task */
             return res.json({ success: true, message: "Task completed successfully!" });
         } else {
             return res.json({ success: false, message: "Incorrect answer. Try again!" });
@@ -1167,7 +1192,7 @@ app.post('/submit-task', isAuthenticated, async (req, res) => {
     }
 });
 
-// Check Win
+/*----------------------------------- Check Win Conditions for The Game in Progress -----------------------------------*/
 app.get('/check-win', async (req, res) => {
     try {
         const crewmatesRow = await db.getP(`SELECT COUNT(*) as count FROM users WHERE role = 'CREWMATE'`);
@@ -1179,7 +1204,7 @@ app.get('/check-win', async (req, res) => {
         const imposters = impostersRow.count;
         const totalTasks = tasksRow.total;
         const completedTasks = completedRow.completed;
-        // Determine winner without returning early
+        /* Determine winner without returning early */
         let winner = null;
         if (crewmates <= imposters) {
             winner = 'IMPOSTERS';
@@ -1188,12 +1213,12 @@ app.get('/check-win', async (req, res) => {
             if (completedTasks >= taskThreshold) winner = 'CREWMATES';
         }
 
-        // If there is a winner, award points once and respond
+        /* If there is a winner, award points once and respond */
         if (winner) {
             if (!winnerAwarded) {
                 try {
                     const roleToAward = (winner === 'IMPOSTERS') ? 'IMPOSTER' : 'CREWMATE';
-                    const awardAmount = 5; // adjust as needed
+                    const awardAmount = 5; /* adjust as needed */
                     await increaseScoresByRole(roleToAward, awardAmount);
                     console.log(`Awarded ${awardAmount} points to all ${roleToAward}s for winning (${winner}).`);
                 } catch (err) {
@@ -1211,7 +1236,7 @@ app.get('/check-win', async (req, res) => {
     }
 });
 
-// Check Dead
+/* ---------------------------------- Check Dead Status of Current User ---------------------------------- */
 app.get('/check-dead', isAuthenticated, async (req, res) => {
     try {
         const username = req.session.username;
@@ -1225,7 +1250,7 @@ app.get('/check-dead', isAuthenticated, async (req, res) => {
     }
 });
 
-// Convert Crewmates to Imposters (Admin)
+/* ---------------------------------- Convert Crewmates to Imposters (Admin) ---------------------------------- */
 app.post('/convert-crewmates', isemAdmin, async (req, res) => {
     try {
         const count = parseInt(req.body.count);
@@ -1246,14 +1271,14 @@ app.post('/convert-crewmates', isemAdmin, async (req, res) => {
     }
 });
 
-// Task Progress
+/*------------------------------------------ Task Progress of the Current Game ------------------------------------------*/
 app.get('/task-progress', isAuthenticated, async (req, res) => {
     try {
         const totalTasksRow = await db.getP(`SELECT COUNT(*) as total FROM player_tasks`);
         const completedTasksRow = await db.getP(`SELECT COUNT(*) as completed FROM player_tasks WHERE completed = 1`);
         const settings = await db.getP('SELECT task_target FROM settings ORDER BY id DESC LIMIT 1');
         
-        // Use settings task_target if available, otherwise default to 1
+        /* Use settings task_target if available, otherwise default to 1 */
         const taskTarget = (settings && settings.task_target > 0) ? settings.task_target : 1;
         
         const percentageCompleted = totalTasksRow.total > 0
@@ -1274,7 +1299,7 @@ app.get('/task-progress', isAuthenticated, async (req, res) => {
 
 
 
-// Get alive players
+/* ------------------------------- Get alive players -------------------------------- */
 app.get('/players', async (req, res) => {
     try {
         const rows = await db.allP(`SELECT id, username FROM users WHERE role != 'DEAD' ORDER BY username ASC`);
@@ -1285,7 +1310,7 @@ app.get('/players', async (req, res) => {
     }
 });
 
-// Submit vote
+/*------------------------------- Submit vote -------------------------------*/
 app.post('/vote', isAuthenticated, async (req, res) => {
     try {
         const voterId = parseInt(req.session.userId);
@@ -1293,10 +1318,10 @@ app.post('/vote', isAuthenticated, async (req, res) => {
 
         if (!voterId) return res.status(403).json({ error: "Not authenticated" });
 
-        // Remove any previous vote
+        /* Remove any previous vote */
         await db.runP(`DELETE FROM votes WHERE voter = ?`, [voterId]);
 
-        // Insert new vote
+        /* Insert new vote */
         await db.runP(`INSERT INTO votes (voter, vote_for) VALUES (?, ?)`, [voterId, voteForId]);
 
         res.json({ message: "Vote submitted successfully" });
@@ -1308,8 +1333,7 @@ app.post('/vote', isAuthenticated, async (req, res) => {
 
 
 
-
-
+/*----------------------- Clear all player scores (Admin Only) -----------------------*/
 app.post('/clear-scores',isAuthenticated, isemAdmin, async (req, res) => {
     try {
         await db.runP(`UPDATE users SET score = 0`);
@@ -1320,7 +1344,7 @@ app.post('/clear-scores',isAuthenticated, isemAdmin, async (req, res) => {
     }
 });
 
-// Get my score (simple fetch for the current logged-in user)
+/* --------------------- Get my score (simple fetch for the current logged-in user) --------------------- */
 app.get('/my-score', isAuthenticated, async (req, res) => {
     try {
         const username = req.session.username;
@@ -1333,7 +1357,7 @@ app.get('/my-score', isAuthenticated, async (req, res) => {
     }
 });
 
-// Increase player's score by a specified amount
+/*------------------------ Increase specific player's score by a specified amount function------------------------*/
 async function increaseScore(username, amount) {
     if (!username || typeof username !== 'string') {
         throw new Error('Invalid username');
@@ -1343,13 +1367,14 @@ async function increaseScore(username, amount) {
         throw new Error('Invalid amount');
     }
 
-    // Use a single UPDATE then SELECT to return the new score
+    /* Use a single UPDATE then SELECT to return the new score */
     await db.runP(`UPDATE users SET score = COALESCE(score,0) + ? WHERE username = ?`, [inc, username]);
     const row = await db.getP(`SELECT score FROM users WHERE username = ?`, [username]);
     return row ? row.score : null;
 }
-// Increase scores for all users with a given role by a specified amount.
-// Returns an array of { username, score } for affected users.
+
+/* ------------------------ Increase scores for all users with a given role by a specified amount. ------------------------*/
+/* -------------------------- Returns an array of { username, score } for affected users. --------------------------*/
 async function increaseScoresByRole(role, amount) {
     if (!role || typeof role !== 'string') {
         throw new Error('Invalid role');
@@ -1359,7 +1384,7 @@ async function increaseScoresByRole(role, amount) {
         throw new Error('Invalid amount');
     }
 
-    // Update all matching users, then return their new scores.
+    /* Update all matching users, then return their new scores. */
     await db.runP(
         `UPDATE users SET score = COALESCE(score, 0) + ? WHERE role = ?`,
         [inc, role]
@@ -1370,11 +1395,11 @@ async function increaseScoresByRole(role, amount) {
         [role]
     );
 
-    return rows; // e.g. [{ username: 'alice', score: 42 }, ...]
+    return rows; /* e.g. [{ username: 'alice', score: 42 }, ...]*/
 }
 
 
-// Simple leaderboard with username, score and dense ranking (authenticated)
+/* ----------------------------------- Simple leaderboard with username, score and dense ranking (authenticated) -------------------- */ 
 app.get('/leaderboard-rankings', isAuthenticated, async (req, res) => {
     try {
         const rows = await db.allP(
@@ -1406,37 +1431,37 @@ app.get('/leaderboard-rankings', isAuthenticated, async (req, res) => {
 
 
 
-// Serve React build folder
+/* -------------------------- Serve React build folder -------------------------- */
 app.use(express.static(path.join(__dirname, "react-frontend/dist")));
 
-// Fallback for SPA routing
+/* ------------------------------- Fallback for SPA routing ------------------------------- */
 app.get("*", isAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, "react-frontend/dist", "index.html"));
 });
 
 
-// Start server
+/*-------------------------------------------------------- Start server ---------------------------------------------------------*/
 const kill = require('kill-port');
 
-// Function to kill the port and start the server
+/*---------------------- Function to kill the port and start the server ----------------------*/
 async function startServer() {
     try {
-        await kill(port); // Kill the port if it's occupied
+        await kill(port); /* Kill the port if it's occupied */
         console.log(`Port ${port} is now free.`);
         await clearLocationData();
-        // Start the server after killing the port
+        /* Start the server after killing the port */
         app.listen(port, () => {
             console.log(`Server running at http://localhost:${port}`);
         });
     } catch (err) {
         console.error('Error freeing port:', err);
         clearLocationData();
-        // Start the server even if the port can't be freed (in case kill fails)
+        /* Start the server even if the port can't be freed (in case kill fails) */
         app.listen(port, () => {
             console.log(`Server running at http://localhost:${port}`);
         });
     }
 }
 
-// Start the server by calling the function
+/* --------- Start the server by calling the function --------- */
 startServer();
