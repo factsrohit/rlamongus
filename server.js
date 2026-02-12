@@ -177,6 +177,7 @@ async function clearLocationData() {
 }
 
 
+
 /*------------------app Middlewares-----------------*/
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -198,7 +199,7 @@ app.set('views', path.join(__dirname, 'views'));
 /*--------------------- Authentication Middleware ---------------------*/
 function isAuthenticated(req, res, next) {
     if (req.session.username) return next();
-    res.redirect('/');
+    res.redirect('/loginpage');
 }
 /*----------------------- Admin Check Middleware -----------------------*/
 function isemAdmin(req, res, next) {
@@ -283,16 +284,15 @@ app.post('/verify-site-access', lockLimiter, (req, res) => {
     }
 
     req.session.siteVerified = true;
-    res.redirect('/');
+    res.redirect('/loginpage');
 });
 
 /*---------------------------site access locking mechanism end-------------------------------------*/
 
 
 /*---------------------------ALL ROUTES START HERE--------------------------------------------------*/
+/*---------------------------Root Route---------------------------*/
 
-/*------------------- Root route -------------------*/
-app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
 
 /*----------------------- Site Access Verification Route -----------------------*/ 
 app.post('/verify-site-access',lockLimiter, (req, res) => {
@@ -306,7 +306,7 @@ app.post('/verify-site-access',lockLimiter, (req, res) => {
     }
 
     req.session.siteVerified = true;
-    res.redirect('/');
+    res.redirect('/loginpage');
 });
 
 
@@ -354,7 +354,7 @@ app.post('/register',async (req, res) => {
         req.session.username = username;
         if (newUser && newUser.id) req.session.userId = newUser.id;
 
-        res.redirect('*');
+        res.redirect('/dashboard');
     } catch (err) {
         console.error("Error registering user:", err);
         res.render('error', { message: "Error registering user. Please try again." });
@@ -380,7 +380,7 @@ app.post('/login',async (req, res) => {
         if (match) {
             req.session.username = username;
             req.session.userId = user.id;
-            res.redirect('*');
+            res.redirect('/dashboard');
         } else {
             res.render('error', { message: "Invalid password. Please try again." });
         }
@@ -393,13 +393,7 @@ app.post('/login',async (req, res) => {
 
 /*-------------------------- Logout route --------------------------*/
 app.get('/logout', (req, res) => {
-    req.session.destroy(() => res.redirect('/'));
-});
-
-
-/* --------------------------- Dashboard route --------------------------- */
-app.get('/dashboard', isAuthenticated, (req, res) => {
-    res.sendFile(__dirname + '/public/dashboard.html');
+    req.session.destroy(() => res.redirect('/loginpage'));
 });
 
 

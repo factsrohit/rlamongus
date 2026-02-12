@@ -1,0 +1,120 @@
+/* loginpage.module.css */
+.loginPageBody {
+    background: url('/assets/background/A_futuristic_cyberpunk_cityscape_at_night_with_vib.png') no-repeat center center fixed;
+    background-size: cover;
+    font-family: 'Arial', sans-serif;
+    background-color: #1e1e2f;
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: auto;
+}
+
+/* Main wrapper to center everything */
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Container for form sections */
+.container {
+    width: 100%;
+    background: #2a2a3b;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0px 5px 12px rgba(0, 0, 0, 0.25);
+    box-sizing: border-box;
+}
+
+/* Headings - scoped to container */
+.container h1 {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #ff4757;
+}
+
+/* Forms - scoped to container */
+.container form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* Input Fields - scoped to container */
+.container input {
+    padding: 12px;
+    border: 1px solid #444;
+    border-radius: 6px;
+    font-size: 16px;
+    background: #1e1e2f;
+    color: white;
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.container input:focus {
+    outline: none;
+    border-color: #ff4757;
+    box-shadow: 0px 0px 5px rgba(255, 71, 87, 0.6);
+}
+
+/* Buttons - scoped to container */
+.container button {
+    padding: 12px;
+    background: linear-gradient(135deg, #ff4757, #e8415a);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.container button:hover {
+    background: linear-gradient(135deg, #e8415a, #ff4757);
+    box-shadow: 0px 4px 10px rgba(255, 71, 87, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+    .wrapper {
+        width: 95%;
+    }
+
+    .container {
+        width: 100%;
+        padding: 15px;
+    }
+
+    .container h1 {
+        font-size: 22px;
+    }
+
+    .container input,
+    .container button {
+        font-size: 14px;
+        padding: 10px;
+    }
+}
