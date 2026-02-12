@@ -1435,7 +1435,7 @@ app.get('/leaderboard-rankings', isAuthenticated, async (req, res) => {
 app.use(express.static(path.join(__dirname, "react-frontend/dist")));
 
 /* ------------------------------- Fallback for SPA routing ------------------------------- */
-app.get("*", isAuthenticated, (req, res) => {
+app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "react-frontend/dist", "index.html"));
 });
 

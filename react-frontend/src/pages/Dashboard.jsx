@@ -2,22 +2,22 @@ import React, { useEffect, useState } from "react";
 import "./Dashboard.css";
 
 // Components
-import AdminControls from "./components/AdminControls";
-import ImposterControls from "./components/ImposterControls";
-import DeadOverlay from "./components/Overlays/DeadOverlay";
-import WinnerOverlay from "./components/Overlays/WinnerOverlay";
-import EmergencyOverlay from "./components/Overlays/EmergencyOverlay";
-import TaskList from "./components/TaskList";
-import GameStatus from "./components/GameStatus";
-import LocationBox from "./components/LocationBox";
-import TaskProgress from "./components/TaskProgress";
-import DisplayRole from "./components/DisplayRole";
-import PlayerScore from "./components/PlayerScore";
+import AdminControls from "../components/AdminControls";
+import ImposterControls from "../components/ImposterControls";
+import DeadOverlay from "../components/Overlays/DeadOverlay";
+import WinnerOverlay from "../components/Overlays/WinnerOverlay";
+import EmergencyOverlay from "../components/Overlays/EmergencyOverlay";
+import TaskList from "../components/TaskList";
+import GameStatus from "../components/GameStatus";
+import LocationBox from "../components/LocationBox";
+import TaskProgress from "../components/TaskProgress";
+import DisplayRole from "../components/DisplayRole";
+import PlayerScore from "../components/PlayerScore";
 
 // Custom Hooks
-import { useRole } from "./hooks/useRole";
-import { useOverlays } from "./hooks/useOverlays";
-import { useAdminControls } from "./hooks/useAdminControls";
+import { useRole } from "../hooks/useRole";
+import { useOverlays } from "../hooks/useOverlays";
+import { useAdminControls } from "../hooks/useAdminControls";
 export default function Dashboard() {
   // --- State from hooks ---
   const { role, isImposter, refresh: _refreshRole } = useRole();
