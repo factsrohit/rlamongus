@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "body-parser": "^1.20.3",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
@@ -8,6 +8,10 @@
     "express-session": "^1.18.1",
     "kill-port": "^2.0.1",
     "path": "^0.12.7",
-    "sqlite3": "^5.1.7"
+    "react-router-dom": "^7.13.0",
+    "sqlite3": "^5.0.2"
+  }
+  ,"overrides": {
+    "tar": ">=7.5.7"
   }
 }
