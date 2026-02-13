@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+
 import "./Dashboard.css";
 
 // Components
@@ -18,6 +18,8 @@ import PlayerScore from "../components/PlayerScore";
 import { useRole } from "../hooks/useRole";
 import { useOverlays } from "../hooks/useOverlays";
 import { useAdminControls } from "../hooks/useAdminControls";
+import { useCheckAdmin } from "../hooks/useCheckAdmin";
+
 export default function Dashboard() {
   // --- State from hooks ---
   const { role, isImposter, refresh: _refreshRole } = useRole();
@@ -35,25 +37,7 @@ export default function Dashboard() {
   } = useOverlays();
 
   // Additional state
-  const [isAdmin, setIsAdmin] = useState(false);
- 
-
-  // --- Check if admin on mount ---
-  useEffect(() => {
-    const checkAdmin = async () => {
-      try {
-        const res = await fetch("/check-admin");
-        const data = await res.json();
-        setIsAdmin(data.isAdmin);
-      } catch (err) {
-        console.error("Failed to check admin status:", err);
-      }
-    };
-    checkAdmin();
-  }, []);
-
-
-
+  const { isAdmin } = useCheckAdmin();
 
 
   // --- Render overlays if active ---

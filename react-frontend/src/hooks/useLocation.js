@@ -15,7 +15,6 @@ export function useLocation(updateInterval = 5000) {
       async (pos) => {
         const { latitude, longitude } = pos.coords;
         setLocation(`📍 Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`);
-        setLastUpdate("✔️ Location updated in DB.");
 
         // Send to server only if changed
         const lastLat = localStorage.getItem("lastLat");
@@ -25,14 +24,34 @@ export function useLocation(updateInterval = 5000) {
           localStorage.setItem("lastLat", latitude);
           localStorage.setItem("lastLon", longitude);
 
+          // Store timestamp of last update
+          const now = new Date();
+          const timeString = now.toLocaleTimeString();
+          
           try {
-            await fetch("/update-location", {
+            const res = await fetch("/update-location", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ latitude, longitude }),
             });
+            const data = await res.json();
+            
+            if(data.success){
+              localStorage.setItem("lastUpdateTime", timeString);
+              setLastUpdate(`✔️ Updated at ${timeString}`);
+            }else{
+              setLastUpdate(`❌ Failed to update at ${timeString}`);
+            }
+
           } catch (err) {
             console.error("Failed to update location:", err);
+            setLastUpdate(`❌ Failed to update at ${timeString}`);
+          }
+        } else {
+          // Show last update time even if location hasn't changed
+          const lastTime = localStorage.getItem("lastUpdateTime");
+          if (lastTime) {
+            setLastUpdate(`ℹ️ Last updated at ${lastTime}`);
           }
         }
       },
