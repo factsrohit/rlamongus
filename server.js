@@ -188,7 +188,8 @@ app.use(session({
 }));
 
 // Serve static files (HTML, JS)
-app.use(express.static('public')); 
+
+app.use(express.static('public'));
 
 // Set EJS as the templating engine
 app.set('view engine', 'ejs');
@@ -1428,10 +1429,12 @@ app.get('/leaderboard-rankings', isAuthenticated, async (req, res) => {
 /* -------------------------- Serve React build folder -------------------------- */
 app.use(express.static(path.join(__dirname, "react-frontend/dist")));
 
+
 /* ------------------------------- Fallback for SPA routing ------------------------------- */
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "react-frontend/dist", "index.html"));
 });
+
 
 
 /*-------------------------------------------------------- Start server ---------------------------------------------------------*/
