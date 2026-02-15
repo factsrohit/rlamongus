@@ -1187,6 +1187,49 @@ app.post('/submit-task', isAuthenticated, async (req, res) => {
     }
 });
 
+/* ------------------------------- Update Task (Admin Only) ------------------------------- */
+app.post('/update-task', isemAdmin, async (req, res) => {
+    try {
+        const { taskId, question, answer, hint } = req.body;
+
+        if (!taskId) return res.status(400).json({ success: false, message: "Task ID is required." });
+
+        const task = await db.getP(`SELECT * FROM tasks WHERE id = ?`, [taskId]);
+        if (!task) return res.status(404).json({ success: false, message: "Task not found." });
+
+        await db.runP(
+            `UPDATE tasks SET question = ?, answer = ?, hint = ? WHERE id = ?`,
+            [question || task.question, answer || task.answer, hint || task.hint, taskId]
+        );
+
+        const updatedTask = await db.getP(`SELECT * FROM tasks WHERE id = ?`, [taskId]);
+        res.json({ success: true, message: "Task updated successfully.", task: updatedTask });
+    } catch (err) {
+        console.error("Error updating task:", err);
+        res.status(500).json({ success: false, message: "Failed to update task." });
+    }
+});
+
+/* ------------------------------- Delete Task (Admin Only) ------------------------------- */
+app.post('/delete-task', isemAdmin, async (req, res) => {
+    try {
+        const { taskId } = req.body;
+
+        if (!taskId) return res.status(400).json({ success: false, message: "Task ID is required." });
+
+        const task = await db.getP(`SELECT * FROM tasks WHERE id = ?`, [taskId]);
+        if (!task) return res.status(404).json({ success: false, message: "Task not found." });
+
+        await db.runP(`DELETE FROM tasks WHERE id = ?`, [taskId]);
+        await db.runP(`DELETE FROM player_tasks WHERE task_id = ?`, [taskId]);
+
+        res.json({ success: true, message: "Task deleted successfully." });
+    } catch (err) {
+        console.error("Error deleting task:", err);
+        res.status(500).json({ success: false, message: "Failed to delete task." });
+    }
+});
+
 /*----------------------------------- Check Win Conditions for The Game in Progress -----------------------------------*/
 app.get('/check-win', async (req, res) => {
     try {

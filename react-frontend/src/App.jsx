@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard.jsx";
 import LoginPage from "./pages/loginpage.jsx";
-
+import TaskManagement from "./pages/taskmanagement.jsx";
 function App() {
   return (
     <BrowserRouter>
@@ -9,6 +9,7 @@ function App() {
         <Route path="/" element={<Navigate to="/LoginPage" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/loginpage" element={<LoginPage />} />
+        <Route path="/taskmanagement" element={<TaskManagement />} />
       </Routes>
     </BrowserRouter>
   );

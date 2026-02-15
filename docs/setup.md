@@ -21,10 +21,9 @@ This guide will walk you through installing, configuring, and running RLAMONGUS,
 
 ## 1. Prerequisites
 
-- **Node.js** (v16 or newer): [Download here](https://nodejs.org/)
+- **Node.js** (v20 or newer): [Download here](https://nodejs.org/)
 - **npm** (comes with Node.js)
 - **Git** (for cloning the repository)
-- **Linux** (recommended, but works on Mac/Windows)
 - **A modern web browser** (Chrome, Firefox, Edge, etc.)
 
 No manual installation of SQLite is required; the app uses a local file.

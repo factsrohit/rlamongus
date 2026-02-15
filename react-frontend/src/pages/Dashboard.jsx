@@ -1,5 +1,5 @@
 
-import "./Dashboard.css";
+import "../styles/Dashboard.css";
 
 // Components
 import AdminControls from "../components/AdminControls";

@@ -15,8 +15,7 @@ export function useTasks(updateInterval = 5000) {
   }, []);
 
   // --- Submit a task answer ---
-  const submitTask = useCallback(async (taskId) => {
-    const answer = prompt("Enter your answer for the task:");
+  const submitTask = useCallback(async (taskId, answer) => {
     try {
       const res = await fetch("/submit-task", {
         method: "POST",
@@ -33,6 +32,22 @@ export function useTasks(updateInterval = 5000) {
       return { success: false, error: err.message };
     }
   }, [fetchTasks]);
+
+  // --- Request hint for a task ---
+  const requestHint = useCallback(async (taskId) => {
+    try {
+      const res = await fetch("/request-hint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId }),
+      });
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      console.error("Failed to request hint:", err);
+      return { success: false, error: err.message };
+    }
+  }, []);
 
   // --- Auto-refresh tasks at interval ---
   useEffect(() => {
@@ -51,5 +66,5 @@ export function useTasks(updateInterval = 5000) {
   }, [fetchTasks, updateInterval]);
 
 
-  return { tasks, refreshTasks: fetchTasks, submitTask };
+  return { tasks, refreshTasks: fetchTasks, submitTask, requestHint };
 }
