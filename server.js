@@ -416,6 +416,65 @@ app.post('/clear-users', async (req, res) => {
     }
 });
 
+/* -------------------------- Get all users (Admin) -------------------------- */
+app.get('/all-users', isemAdmin, async (req, res) => {
+    try {
+        const rows = await db.allP(`SELECT id, username, role, score FROM users WHERE username != ? ORDER BY username ASC`, [adminUsername]);
+        res.json({ users: rows });
+    } catch (err) {
+        console.error('Error fetching all users:', err);
+        res.status(500).json({ success: false, message: 'Failed to fetch users' });
+    }
+});
+
+/* -------------------------- Update user (rename) (Admin) -------------------------- */
+app.post('/update-user', isemAdmin, async (req, res) => {
+    try {
+        const { id, username } = req.body;
+        if (!id || !username) return res.status(400).json({ success: false, message: 'Missing id or username' });
+
+        const user = await db.getP(`SELECT username FROM users WHERE id = ?`, [id]);
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        const oldUsername = user.username;
+
+        if (oldUsername === adminUsername) return res.status(403).json({ success: false, message: 'Cannot rename admin' });
+
+        const exists = await db.getP(`SELECT id FROM users WHERE username = ? AND id != ?`, [username, id]);
+        if (exists) return res.status(400).json({ success: false, message: 'Username already taken' });
+
+        /* Update username in users, locations and player_tasks to keep referential integrity */
+        await db.runP(`UPDATE users SET username = ? WHERE id = ?`, [username, id]);
+        await db.runP(`UPDATE locations SET username = ? WHERE username = ?`, [username, oldUsername]);
+        await db.runP(`UPDATE player_tasks SET username = ? WHERE username = ?`, [username, oldUsername]);
+
+        res.json({ success: true, message: 'User updated' });
+    } catch (err) {
+        console.error('Error updating user:', err);
+        res.status(500).json({ success: false, message: 'Failed to update user' });
+    }
+});
+
+/* -------------------------- Delete user (Admin) -------------------------- */
+app.post('/delete-user', isemAdmin, async (req, res) => {
+    try {
+        const { id } = req.body;
+        if (!id) return res.status(400).json({ success: false, message: 'Missing id' });
+
+        const user = await db.getP(`SELECT username FROM users WHERE id = ?`, [id]);
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        if (user.username === adminUsername) return res.status(403).json({ success: false, message: 'Cannot delete admin' });
+
+        await db.runP(`DELETE FROM users WHERE id = ?`, [id]);
+        await db.runP(`DELETE FROM locations WHERE username = ?`, [user.username]);
+        await db.runP(`DELETE FROM player_tasks WHERE username = ?`, [user.username]);
+
+        res.json({ success: true, message: 'User deleted' });
+    } catch (err) {
+        console.error('Error deleting user:', err);
+        res.status(500).json({ success: false, message: 'Failed to delete user' });
+    }
+});
+
 /*----------------------------- Update player location -----------------------------*/
 app.post('/update-location', async (req, res) => {
     const { latitude, longitude } = req.body;

@@ -59,6 +59,11 @@ function AdminControls({ setWinnerVisible}) {
                     Manage Tasks
                 </NavLink>
             </button>
+            <button className="neon" id="userManagementBtn">
+                <NavLink to="/usermanagement" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    Manage Users
+                </NavLink>
+            </button>
         </div>
     );
 }

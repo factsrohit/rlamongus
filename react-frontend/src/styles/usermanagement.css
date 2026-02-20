@@ -1,0 +1,225 @@
+.user-management {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: #f9f9f9;
+  min-height: 100vh;
+}
+
+.user-management h2 {
+  margin: 0 0 30px 0;
+  color: #333;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.user-management__error {
+  background-color: #ffebee;
+  border: 1px solid #ef5350;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  color: #c62828;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 6px rgba(239, 83, 80, 0.15);
+}
+
+.user-list {
+  margin-top: 0;
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.user-template {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 12px;
+  border-bottom: 1px solid #e0e0e0;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.user-template:last-child {
+  border-bottom: none;
+}
+
+.user-template:hover {
+  background-color: #f0f7ff;
+  border-bottom-color: transparent;
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.08);
+  transform: translateX(2px);
+}
+
+.user-template__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-template__name {
+  font-weight: 700;
+  color: #333;
+  font-size: 15px;
+}
+
+.user-template__role {
+  color: #0066cc;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-left: 0;
+  background-color: #e8f0fe;
+  padding: 2px 8px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.user-template__score {
+  font-size: 11px;
+  color: #4caf50;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.user-actions__name {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.user-actions__editing {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.user-actions__input {
+  padding: 8px 12px;
+  border: 1px solid #0066cc;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: all 0.2s ease;
+  background-color: #fafcff;
+}
+
+.user-actions__input:focus {
+  outline: none;
+  border-color: #0052a3;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+  background-color: #ffffff;
+}
+
+/* Primary action button (e.g. Edit, Save) */
+.user-actions button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  background-color: #0066cc;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.user-actions button:hover {
+  background-color: #0052a3;
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+  transform: translateY(-1px);
+}
+
+.user-actions button:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+/* Secondary / cancel button */
+.user-actions button:last-child {
+  background-color: #ffffff;
+  color: #666;
+  border: 1px solid #d0d0d0;
+}
+
+.user-actions button:last-child:hover {
+  background-color: #f3f3f3;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  color: #333;
+}
+
+/* Save / confirm button (when there are 3+ buttons, middle one is green) */
+.user-actions button.btn-confirm {
+  background-color: #4caf50;
+  color: #ffffff;
+  border: none;
+}
+
+.user-actions button.btn-confirm:hover {
+  background-color: #45a049;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+@media (max-width: 768px) {
+  .user-management {
+    padding: 16px;
+  }
+
+  .user-management h2 {
+    font-size: 24px;
+  }
+
+  .user-list {
+    padding: 16px;
+  }
+
+  .user-template {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .user-template:hover {
+    transform: none;
+  }
+
+  .user-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-management {
+    padding: 12px;
+  }
+
+  .user-management h2 {
+    font-size: 20px;
+  }
+
+  .user-actions button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
