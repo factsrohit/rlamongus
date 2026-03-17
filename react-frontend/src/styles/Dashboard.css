@@ -223,7 +223,38 @@
     box-shadow: 0 0 12px rgba(0, 255, 255, 0.5);
     color: #fff;
   }
-  
+
+  .fake-neon-button {
+    height: 30px;
+    width: 90%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 3px;
+    gap: 0.4rem;
+    padding: 0.55rem 1rem;
+    border: 2px solid var(--primary-neon);
+    border-radius: 10px;
+    background: rgba(0, 255, 255, 0.15);
+    color: var(--primary-neon);
+    text-decoration: none;
+    font-weight: 700;
+    transition: all 0.18s ease;
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+    animation: simplePulse 3s ease-in-out infinite;
+  }
+
+  .fake-neon-button:hover {
+    background: rgba(0, 255, 255, 0.25);
+    color: #fff;
+    box-shadow: 0 0 14px rgba(0, 255, 255, 0.6);
+    transform: translateY(-1px);
+  }
+
+  .fake-neon-button:active {
+    transform: translateY(1px);
+  }
+
   /* Kill Button with reduced effects */
   button.kill {
     background: rgba(255, 0, 51, 0.15);

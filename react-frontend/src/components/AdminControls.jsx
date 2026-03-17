@@ -1,6 +1,7 @@
 import { useAdminControls } from "../hooks/useAdminControls";
 
 import { NavLink } from "react-router-dom";
+import NavButton from "./navbutton";
 
 function AdminControls({ setWinnerVisible}) {
     const { isLoading, startGame, startMeeting, endMeeting, convertCrewmates, clearScores, clearUsers } = useAdminControls();
@@ -54,16 +55,15 @@ function AdminControls({ setWinnerVisible}) {
             <button className="alert" id="convertCrewmatesBtn" onClick={handleConvertCrewmates} disabled={isLoading}>🔄 Convert Crewmates to Imposters</button>
             <button className="alert" id="scorereset" onClick={handleClearScores} disabled={isLoading}>✅ Clear Scores of All Players</button>
             <button className="alert" id="clearusers" onClick={handleClearUsers} disabled={isLoading}>⚠️ Clear All Users (Except Admin)</button>
-            <button className="neon" id="taskManagementBtn">
-                <NavLink to="/taskmanagement" style={{ color: 'inherit', textDecoration: 'none' }}>
+            
+            <NavButton id="taskManagementBtn" to="/taskmanagement" >
                     Manage Tasks
-                </NavLink>
-            </button>
-            <button className="neon" id="userManagementBtn">
-                <NavLink to="/usermanagement" style={{ color: 'inherit', textDecoration: 'none' }}>
-                    Manage Users
-                </NavLink>
-            </button>
+            </NavButton>
+
+            <NavButton to="/usermanagement" style={{ color: 'inherit', textDecoration: 'none' }}>
+                Manage Users
+            </NavButton>
+        
         </div>
     );
 }
