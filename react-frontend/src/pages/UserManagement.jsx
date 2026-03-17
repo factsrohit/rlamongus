@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import UserTemplate from '../components/UserTemplate'
 import '../styles/usermanagement.css'
-import { NavLink } from 'react-router-dom'
+import NavButton from '../components/navbutton'
 
 export default function UserManagement() {
   const [users, setUsers] = useState([])
@@ -57,11 +57,10 @@ export default function UserManagement() {
 
   return (
     <div className="user-management">
-        <button className='dashboard-btn'>
-            <NavLink to="/dashboard" style={{ color: 'inherit', textDecoration: 'none' }}>
+            <NavButton to="/dashboard" style={{ color: 'inherit', textDecoration: 'none' }}>
             Back to Dashboard
-            </NavLink>
-        </button>
+            </NavButton>
+        
       <h2>User Management</h2>
       {loading && <div>Loading users...</div>}
       {error && <div className="user-management__error">{error}</div>}

@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import TaskEditor from '../components/taskeditor';
 import '../styles/taskmanagement.css';
-import { NavLink } from 'react-router-dom';
-
+import NavButton from '../components/navbutton';
 export default function TaskManagement() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -101,11 +100,12 @@ export default function TaskManagement() {
     <div className="task-management-container">
       <div className="task-management-header">
         <h1>Task Management</h1>
-        <button className='dashboard-btn'>
-            <NavLink to="/dashboard" style={{ color: 'inherit', textDecoration: 'none' }}>
+
+            <NavButton to="/dashboard" >
             Back to Dashboard
-            </NavLink>
-        </button>
+            </NavButton>
+
+
         <button
           className="btn btn-add-task"
           onClick={() => setShowAddForm(!showAddForm)}

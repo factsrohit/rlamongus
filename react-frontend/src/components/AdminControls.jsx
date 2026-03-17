@@ -1,6 +1,4 @@
 import { useAdminControls } from "../hooks/useAdminControls";
-
-import { NavLink } from "react-router-dom";
 import NavButton from "./navbutton";
 
 function AdminControls({ setWinnerVisible}) {
